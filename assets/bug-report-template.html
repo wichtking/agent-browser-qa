@@ -1,0 +1,77 @@
+<!doctype html>
+<!-- ============================================================================
+  BUG REPORT TEMPLATE (agent-browser-qa skill)
+  วิธีใช้: 1) แก้ META + bugs[] ในแท็ก <script>  2) วาง screenshot หลักฐานใน shots/ (ถ้ามี)
+           3) agent-browser open <ไฟล์นี้> → wait 6000 → agent-browser pdf out.pdf
+  bug: { id, sev(High|Medium|Low|Enhancement), title, comp, status, env, summary,
+         steps[], expected, actual, evidence(<pre> ใช้ \n), workaround, impact,
+         shots[[img,caption]] }   ดู references/pdf-reports.md สำหรับ gotcha PDF.
+============================================================================= -->
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bug Report</title>
+<style>
+  @page{size:182mm 250mm;margin:13mm 13mm 12mm;
+    @bottom-right{content:"หน้า " counter(page) " / " counter(pages);font-size:9.5px;color:#8a93a3}
+    @top-right{content:"Bug Report";font-size:9px;color:#b6bcc8}}
+  html,body{margin:0}
+  :root{--blue:#1f5fbf;--blue-d:#16438a;--muted:#5a6678;--line:#d8dee8;--tbl-head:#eaf1fb;--tbl-alt:#f7f9fc;--high:#c0392b;--med:#e67e22;--low:#7f8c8d;--enh:#2980b9}
+  *{box-sizing:border-box}body{font-family:"Segoe UI","Sarabun",system-ui,sans-serif;margin:0;background:#9aa3b2;color:#222;line-height:1.6;font-size:14px}
+  .doc{max-width:900px;margin:0 auto;background:#fff}.toolbar{max-width:900px;margin:14px auto 0;padding:0 6px}.printbtn{background:var(--blue);color:#fff;border:0;padding:9px 18px;border-radius:8px;cursor:pointer;font-weight:600}
+  .coverpage{break-after:page;text-align:center;padding-top:50mm}.coverpage .logo{width:104px;height:104px;margin:0 auto 22px;display:block}
+  .coverpage h1{color:var(--blue-d);font-size:36px;margin:0 0 8px}.coverpage .sub{color:var(--blue);font-size:18px;font-weight:600;margin:0 0 4px}
+  .coverpage .tagline{color:var(--muted);font-size:14px;margin:0 0 28px}.coverpage .cdivider{width:90px;height:3px;background:var(--blue);margin:0 auto 26px;border-radius:2px}
+  .coverpage .metabox{display:inline-block;text-align:left;border:1px solid var(--line);border-radius:10px;padding:16px 22px;background:#f7f9fc;font-size:13.5px;color:#33405c;min-width:360px}.coverpage .metabox div{margin:5px 0}.coverpage .metabox b{color:var(--blue-d);display:inline-block;min-width:130px}
+  .toc{break-after:page;margin-top:24px}.toc h2{color:var(--blue-d);font-size:20px;margin:0 0 10px;border-bottom:2px solid var(--line);padding-bottom:6px}
+  .toc ul{list-style:none;padding:0;margin:0}.toc li{margin:6px 0}.toc a{text-decoration:none;color:var(--blue-d);display:flex;justify-content:space-between;align-items:baseline;gap:8px;border-bottom:1px dotted #c7d0de;padding-bottom:3px}.toc a::after{content:target-counter(attr(href),page);color:#7a8499;font-weight:400;white-space:nowrap}
+  .toc .sevtag{font-size:10.5px;font-weight:700;color:#fff;border-radius:4px;padding:1px 6px;margin-right:6px}
+  .h2blue{color:var(--blue-d);font-size:20px;margin:24px 0 8px;border-bottom:2px solid var(--line);padding-bottom:6px}
+  .sumtable{width:100%;border-collapse:collapse;font-size:13px;border:1px solid var(--line);margin:6px 0 12px}.sumtable th{background:var(--tbl-head);color:var(--blue-d);text-align:left;padding:8px 11px;border:1px solid var(--line)}.sumtable td{padding:8px 11px;border:1px solid var(--line)}
+  .pill{display:inline-block;font-size:11px;font-weight:700;color:#fff;border-radius:5px;padding:2px 9px}.sevbar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 0}.sevbar .b{font-size:12.5px;color:#fff;border-radius:6px;padding:5px 12px;font-weight:600}
+  .bug-h{break-before:page;color:#fff;padding:12px 16px;border-radius:8px 8px 0 0;margin-top:30px}.bug-h .id{font-size:13px;opacity:.92;font-weight:600}.bug-h .ti{font-size:17px;font-weight:700;display:block;margin-top:2px}
+  .bug-body{border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;padding:16px 18px;margin-bottom:10px}
+  .meta{width:100%;border-collapse:collapse;font-size:13px;border:1px solid var(--line);margin:0 0 12px}.meta td{padding:7px 11px;border:1px solid var(--line);vertical-align:top}.meta td.k{background:#f3f6fc;font-weight:700;color:var(--blue-d);width:25%;white-space:nowrap}
+  .lbl{font-weight:700;color:var(--blue-d);margin:12px 0 5px;font-size:14px}ol.steps{margin:4px 0 0;padding-left:20px}ol.steps li{margin:3px 0}
+  .ea{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 0}.ebox{border-left:4px solid #178a4c;background:#e8f8ee;padding:9px 13px;border-radius:6px;font-size:13px}.abox{border-left:4px solid var(--high);background:#fdeaea;padding:9px 13px;border-radius:6px;font-size:13px}.ebox b,.abox b{display:block;margin-bottom:3px}
+  pre.code{background:#0f1729;color:#d7e0f5;padding:12px 14px;border-radius:8px;font-family:Consolas,monospace;font-size:11.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;margin:5px 0 0;break-inside:avoid}
+  .wbox{border-left:4px solid var(--blue);background:#eef5ff;padding:9px 14px;border-radius:6px;font-size:13px;margin:5px 0 0}.ibox{border-left:4px solid var(--med);background:#fff4e8;padding:9px 14px;border-radius:6px;font-size:13px;margin:5px 0 0}
+  .shot{border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:6px 0 0;break-inside:avoid}.shot img{width:100%;display:block}.shot .cap{font-size:11.5px;color:var(--muted);padding:5px 10px;background:#f7f9fc;border-top:1px solid var(--line)}
+  @media print{body{background:#fff;font-size:12px}.toolbar{display:none}.pagedjs_page{margin:0!important;box-shadow:none!important}}
+  @media screen{.pagedjs_page{background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.25);margin:10mm auto}}
+</style></head><body>
+<div class="toolbar"><button class="printbtn" onclick="window.print()">🖨️ พิมพ์ / บันทึกเป็น PDF</button></div>
+<div class="doc" id="doc"></div>
+
+<script>
+/* ===== EDIT HERE ===== */
+const META={title:"Bug Report",sub:"<ระบบ/โปรเจกต์>",tagline:"รายงานข้อบกพร่องที่พบระหว่าง QA",
+  meta:[["ผลิตภัณฑ์","<ชื่อ + version>"],["สภาพแวดล้อม","<OS / browser>"],["วันที่","DD MMMM YYYY"],["วิธีพบ","รันจริง · มี repro"]]};
+const bugs=[
+ /* หมายเหตุ: id ต้องขึ้นต้นด้วยตัวอักษร (เช่น AB-001) ห้ามขึ้นต้นด้วยตัวเลข — ไม่งั้น querySelector('#id') จะ invalid */
+ {id:"AB-001",sev:"High",title:"<หัวข้อบั๊ก>",comp:"<component>",status:"<สถานะ เช่น ยืนยันแล้ว · มี workaround>",env:"<env>",
+  summary:"<สรุปอาการ>",
+  steps:["<ขั้นตอนทำซ้ำ 1>","<ขั้นตอน 2>"],
+  expected:"<ผลที่คาดหวัง>",actual:"<ผลที่เกิดจริง>",
+  evidence:"<หลักฐาน บรรทัดต่อบรรทัด>\n<log / ค่าจริง>",
+  workaround:"<วิธีแก้/หลีกเลี่ยง>",impact:"<ผลกระทบ>",
+  shots:[/* ["shots/x.png","คำบรรยาย"] */]},
+ /* เพิ่มบั๊ก: sev = High | Medium | Low | Enhancement */
+];
+/* ===== จบส่วนแก้ ===== */
+
+const SEV={High:{c:"var(--high)",t:"HIGH"},Medium:{c:"var(--med)",t:"MEDIUM"},Low:{c:"var(--low)",t:"LOW"},Enhancement:{c:"var(--enh)",t:"ENHANCEMENT"}};
+const cnt={High:0,Medium:0,Low:0,Enhancement:0};bugs.forEach(b=>cnt[b.sev]++);
+const logoSVG=`<svg class="logo" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="6" fill="#fdeaea"/><path d="M12 10v4M12 16.5v.01"/><path d="M12 3v2M5 6l1.5 1.5M19 6l-1.5 1.5M4 13H2M22 13h-2M6 19l1.5-1.5M18 19l-1.5-1.5"/></svg>`;
+const cover=`<div class="coverpage">${logoSVG}<h1>${META.title}</h1><div class="sub">${META.sub}</div><div class="tagline">${META.tagline}</div><div class="cdivider"></div><div class="metabox">${META.meta.map(m=>`<div><b>${m[0]}:</b> ${m[1]}</div>`).join("")}<div><b>จำนวนที่พบ:</b> ${bugs.length} (High ${cnt.High}·Medium ${cnt.Medium}·Low ${cnt.Low}·Enh ${cnt.Enhancement})</div></div></div>`;
+let toc=`<div class="toc"><h2>สารบัญ</h2><ul><li><a href="#summary">บทสรุปผู้บริหาร</a></li>`;
+bugs.forEach(b=>toc+=`<li><a href="#${b.id}"><span><span class="sevtag" style="background:${SEV[b.sev].c}">${SEV[b.sev].t}</span>BUG-${b.id} — ${b.title}</span></a></li>`);
+toc+=`</ul></div>`;
+let sum=`<h2 class="h2blue" id="summary">บทสรุปผู้บริหาร (Executive Summary)</h2><p>พบข้อบกพร่อง/ข้อจำกัดรวม <b>${bugs.length} รายการ</b>. ทุกรายการมีขั้นตอน reproduce และ workaround.</p><div class="sevbar"><span class="b" style="background:var(--high)">High: ${cnt.High}</span><span class="b" style="background:var(--med)">Medium: ${cnt.Medium}</span><span class="b" style="background:var(--low)">Low: ${cnt.Low}</span><span class="b" style="background:var(--enh)">Enhancement: ${cnt.Enhancement}</span></div><table class="sumtable"><thead><tr><th style="width:12%">รหัส</th><th style="width:13%">ระดับ</th><th>หัวข้อ</th><th style="width:20%">สถานะ</th></tr></thead><tbody>${bugs.map(b=>`<tr><td>BUG-${b.id}</td><td><span class="pill" style="background:${SEV[b.sev].c}">${SEV[b.sev].t}</span></td><td>${b.title}</td><td>${b.status}</td></tr>`).join("")}</tbody></table>`;
+let body="";
+bugs.forEach(b=>{const c=SEV[b.sev].c;
+  body+=`<div class="bug-h" id="${b.id}" style="background:${c}"><span class="id">BUG-${b.id} · ${SEV[b.sev].t}</span><span class="ti">${b.title}</span></div><div class="bug-body"><table class="meta"><tr><td class="k">Component</td><td>${b.comp}</td><td class="k">Severity</td><td><span class="pill" style="background:${c}">${SEV[b.sev].t}</span></td></tr><tr><td class="k">Status</td><td>${b.status}</td><td class="k">Environment</td><td>${b.env}</td></tr></table><div class="lbl">สรุปอาการ</div><div>${b.summary}</div><div class="lbl">ขั้นตอนทำซ้ำ (Steps to Reproduce)</div><ol class="steps">${b.steps.map(s=>`<li>${s}</li>`).join("")}</ol><div class="ea"><div class="ebox"><b>✓ ผลที่คาดหวัง</b>${b.expected}</div><div class="abox"><b>✗ ผลที่เกิดจริง</b>${b.actual}</div></div><div class="lbl">หลักฐาน (Evidence)</div><pre class="code">${b.evidence}</pre>`;
+  (b.shots||[]).forEach(([img,cap])=>body+=`<div class="shot"><img src="${img}" alt="${cap}"><div class="cap">${cap}</div></div>`);
+  body+=`<div class="lbl">วิธีแก้ / หลีกเลี่ยง (Workaround)</div><div class="wbox">${b.workaround}</div><div class="lbl">ผลกระทบ (Impact)</div><div class="ibox">${b.impact}</div></div>`;});
+document.getElementById("doc").innerHTML=cover+toc+sum+body;
+</script>
+<script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+</body></html>

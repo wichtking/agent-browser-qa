@@ -1,0 +1,13 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+
+# Python cache (if scripts get added later)
+__pycache__/
+*.pyc
+
+# QA run artifacts (don't publish scratch screenshots/logs)
+qa/
+*-workspace/
+*.log

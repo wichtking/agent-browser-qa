@@ -1,0 +1,62 @@
+# ทำเอกสาร PDF คุณภาพส่งจริง (user guide / bug report)
+
+เป้าหมาย: PDF ที่มี **ปก+โลโก้ · สารบัญ+เลขหน้าตรงจริง · footer เลขหน้า · screenshot ไฮไลต์ ·
+ตารางข้อมูล** จากการรันจริง. มี template พร้อมใช้ใน `assets/` — แก้แค่ data array.
+
+## ขั้นตอน (recipe)
+
+```
+1. ก๊อป template:  cp assets/guide-template.html  qa/<feat>/guide/guide.html
+   (หรือ bug-report-template.html)
+2. แก้ data array ในแท็ก <script> ให้ตรงเนื้อหา (scenario/step/field หรือ bug)
+3. วาง screenshot ไว้ใน guide/shots/ (ถ่ายจาก run จริง — ดูหัวข้อ "ถ่ายภาพไฮไลต์")
+4. สร้าง PDF:
+     agent-browser open "file:///ABS/PATH/guide.html"
+     agent-browser wait 6000          # รอ paged.js จัดหน้า (เช็ค .pagedjs_page count)
+     agent-browser pdf "ชื่อเอกสาร.pdf"
+5. verify: เปิด PDF กลับมา screenshot ดูจำนวนหน้า (ต้องไม่มีหน้าว่างสลับ) + สารบัญมีเลขหน้า
+```
+
+## ทำไมต้อง paged.js (และกับดักของมัน)
+
+`agent-browser pdf` รับแค่ path — **ไม่มี option ตั้ง margin / paper / preferCSSPageSize /
+header-footer**. CSS `@page` margin-box counter ของ Chrome เปล่าๆ ก็ไม่ทำงานใน printToPDF.
+→ ใช้ **paged.js** (polyfill CSS Paged Media) ที่ให้ `counter(page)/counter(pages)` ใน margin-box
+และสารบัญเลขหน้าจริงด้วย `target-counter`. โหลด CDN ท้าย body **หลัง** script ที่สร้าง DOM:
+```html
+<script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+```
+
+**กับดัก double-pagination (หน้าคู่ว่าง เลขหน้าเป็น 2 เท่า) — ต้องแก้ 2 จุด:**
+1. printToPDF ของ agent-browser ใช้ paper **Letter** (พื้นที่พิมพ์ ~196×259mm) + margin default.
+   ถ้า `@page size` ใหญ่กว่านี้จะล้นเป็นหน้าถัดไป → ตั้ง **เล็กกว่า**:
+   `@page{ size:182mm 250mm; margin:13mm }`
+2. อย่าใส่ `margin` บน `.pagedjs_page` ตอนพิมพ์ (มันบวกความสูง) → จำกัดเฉพาะจอ:
+   ```css
+   @media screen{ .pagedjs_page{ box-shadow:...; margin:10mm auto } }
+   @media print { .pagedjs_page{ margin:0 !important; box-shadow:none !important } }
+   ```
+
+**สารบัญเลขหน้า:** `leader('.')` อาจไม่ทำงาน → ใช้ flex แทน:
+```css
+.toc a{ display:flex; justify-content:space-between; border-bottom:1px dotted #ccc }
+.toc a::after{ content: target-counter(attr(href), page) }
+```
+
+**verify อย่างไร:** generated content (counter/target-counter) **ไม่อยู่** ใน textContent/
+getComputedStyle → ตรวจด้วย **screenshot เท่านั้น** (เปิด PDF กลับมาถ่าย). เช็ค: จำนวนหน้าตรงกับ
+`.pagedjs_page` count (ไม่เป็น 2 เท่า), สารบัญมีเลข, footer "หน้า X / Y" โผล่.
+
+## ถ่ายภาพไฮไลต์ชี้จุดคลิก (ดู assets/highlight.js)
+
+ก่อน screenshot แต่ละ step: `eval` inject กรอบเรืองแสงบน element เป้าหมาย (ดู snippet ใน
+`assets/highlight.js`) — 🔴 แดง = จุดคลิก, 🟢 เขียว = จุดสังเกตผล. ฝังลงรูป → ตรงปุ่มเป๊ะทุกครั้ง.
+**อย่าใส่ข้อความไทยในป้ายที่ inject** (headless ไม่มีฟอนต์ไทย เพี้ยนเป็นกล่อง) — ใส่แค่กรอบ,
+ข้อความไทยไปอยู่ใน HTML. ขับ flow ด้วย JS click ถ้า native click flaky (ดู gotchas ข้อ 7).
+
+## สไตล์เนื้อหาที่เข้าใจง่าย (อ้างอิง help-center มืออาชีพ)
+
+ต่อ section/scenario ใส่: **คืออะไร · ทำเพื่ออะไร · เมื่อไรใช้**. ต่อ step ใส่: **วิธีทำ · ผลที่เห็น ·
+ทำงานอย่างไร/ผลต่อระบบ** + กล่อง note/warning. ปิดท้ายด้วย **ผลต่อระบบหลังทำรายการ**, **FAQ**,
+**glossary**. ถ้าระบบจริงไม่มีข้อมูล (เช่น demo ไม่มีสต็อก) ให้แยกชัด "สังเกตจริง" vs "เทียบเคียง"
+— อย่าเดามั่ว. ทุก step/หลักฐานต้องมาจาก run จริง ไม่ใช่เขียนจากเดา.

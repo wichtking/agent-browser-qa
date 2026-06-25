@@ -24,15 +24,15 @@ sequenceDiagram
     participant C as Claude (สมอง)
     participant A as agent-browser (มือ-ตา)
     participant B as Chrome / CDP
-    U->>C: "QA หน้า X แล้วทำคู่มือ/รายงาน"
-    C->>A: open <url> ; wait --load networkidle
+    U->>C: QA หน้า X แล้วทำคู่มือ/รายงาน
+    C->>A: open URL, wait networkidle
     A->>B: นำทาง + รอจน idle
     loop ทุก step
-        C->>A: scrollintoview → screenshot (ไฟล์)
-        C->>A: click / fill  (หรือ JS click ถ้า flaky)
+        C->>A: scrollintoview, screenshot (ไฟล์)
+        C->>A: click / fill (หรือ JS click ถ้า flaky)
         A->>B: ทำ action
-        C->>A: assert (wait / get url / get text / get count)
-        C->>A: errors --json
+        C->>A: assert (wait / get url / get text / count)
+        C->>A: errors (json)
         A-->>C: ผลสั้น (token-safe)
     end
     C->>C: ① qa-report.md (verdict + ตาราง step)

@@ -103,8 +103,16 @@ agent-browser-qa/
 - 🧰 [`references/commands.md`](./references/commands.md) — command reference
 - 📄 [`references/pdf-reports.md`](./references/pdf-reports.md) — วิธีทำ PDF (paged.js)
 
+## Credits / Built on
+
+skill นี้เป็นเพียง **playbook ที่ห่อหุ้มการใช้งาน** เครื่องมือต้นทาง — ไม่ได้ทำซ้ำหรือแทนที่ตัว CLI:
+
+- 🧰 **[vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)** — Rust CLI ที่ขับ Chrome ผ่าน CDP (ตัว engine จริงทั้งหมด). skill นี้แค่รวบรวมวิธีใช้ + กับดัก + template เอกสาร. เครดิตและลิขสิทธิ์ของ CLI เป็นของผู้พัฒนา upstream.
+- 🌐 ตัวอย่าง/หลักฐานรันจาก **[saucedemo.com](https://www.saucedemo.com)** (Sauce Labs demo app)
+- 📄 PDF pagination ด้วย **[Paged.js](https://pagedjs.org/)**
+
 ## License
 
-[MIT](LICENSE) © 2026 Wichit Wongta
+[MIT](LICENSE) © 2026 Wichit Wongta  ·  (ตัว `agent-browser` CLI อยู่ภายใต้ลิขสิทธิ์ของ vercel-labs)
 
-*Templates และ gotchas มาจากการรันจริงบน [saucedemo.com](https://www.saucedemo.com) ด้วย `agent-browser` 0.27.0 บน Windows.*
+*Templates และ gotchas มาจากการรันจริงบน saucedemo.com ด้วย `agent-browser` 0.27.0 บน Windows.*

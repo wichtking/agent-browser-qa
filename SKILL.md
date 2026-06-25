@@ -17,7 +17,7 @@ description: >-
 
 # agent-browser QA & Docs
 
-`agent-browser` = Rust CLI (vercel-labs/agent-browser) ขับ Chrome ผ่าน CDP, output เป็น
+`agent-browser` = Rust CLI ([vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)) ขับ Chrome ผ่าน CDP, output เป็น
 accessibility tree + element ref (`@e1`) ที่ LLM อ่านง่าย. **ตัว CLI ไม่กิน token — token เกิด
 เฉพาะตอน feed output กลับเข้า context.**
 

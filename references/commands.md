@@ -35,6 +35,27 @@ find text "Checkout" click
 ```
 locator: `role | text | label | placeholder | alt | title | testid | first | last | nth`
 
+## จับภาพ native `<select>` dropdown (ที่เปิดเห็นตัวเลือก) — สำหรับ user guide
+native dropdown ของ `<select>` ถูกเปิดด้วย **input synthesis** เท่านั้น (`showPicker()`/`.click()`
+จาก `eval` จะ fail `requires a user gesture`). **ยืนยันแล้วว่า `press` เปิดได้และ screenshot จับติด
+ทั้ง headed + headless** (Chrome for Testing 150):
+```
+eval "document.querySelector('SEL').focus()"
+press "Alt+ArrowDown"          # เปิด dropdown (เห็นตัวเลือกลอยทับ content)
+press "ArrowDown"              # ทำซ้ำ N ครั้งเลื่อนไฮไลต์ไปตัวเลือกที่ต้องการ
+screenshot guide/step.png      # จับ dropdown ที่เปิดอยู่ + ไฮไลต์ตัวที่เลือก
+press "Enter"                  # commit (หรือ Escape ปิด — ค่าจะตามตัวที่ไฮไลต์อยู่แล้ว)
+```
+- **ArrowDown commit ค่าทันที** (selection ตามไฮไลต์) — เหมาะกับ guide ที่ต้องเลือกตัวนั้นพอดี.
+- รุ่น Chrome เก่ากว่านี้อาจจับ native popup ไม่ติด → fallback: ตั้ง `select.size=N` ชั่วคราว
+  (กางเป็น list inline) หรือ inject DOM overlay เลียนแบบ dropdown (ทั้งคู่อยู่ใน DOM = จับติดเสมอ).
+- ป๊อปอัป native อื่นที่ **อยู่นอก DOM** (`alert`/`confirm`, file dialog) ยัง screenshot ไม่ติด.
+- **crop เฉพาะส่วนสำคัญ:** `screenshot "<selector>" <path>` clip เฉพาะกล่อง element (เช่น `.card`) ตัดขอบว่างทิ้ง.
+  **แต่ element-scoped screenshot จะ "ตก" native dropdown/top-layer popup** (เป็น layer แยก) → ถ้าภาพมี popup
+  ให้ถ่าย **full viewport** แล้ว crop ด้วย image tool ตาม `getBoundingClientRect` (PowerShell `System.Drawing`
+  ถ้าไม่มี PIL: `$g.DrawImage($src,destRect,srcRect,Pixel)`). ภาพ card แนวตั้ง/จัตุรัส ใน guide ควรคุม
+  `.shot{max-width:340px;margin:auto}` กันรูปบานเต็มหน้า (กิน page เกินจำเป็น).
+
 ## หลักฐาน / เอกสาร
 | คำสั่ง | หมายเหตุ |
 |---|---|

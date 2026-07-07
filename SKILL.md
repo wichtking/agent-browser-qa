@@ -17,106 +17,143 @@ description: >-
 
 # agent-browser QA & Docs
 
-`agent-browser` = Rust CLI ([vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)) ขับ Chrome ผ่าน CDP, output เป็น
-accessibility tree + element ref (`@e1`) ที่ LLM อ่านง่าย. **ตัว CLI ไม่กิน token — token เกิด
-เฉพาะตอน feed output กลับเข้า context.**
+`agent-browser` = Rust CLI ([vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser))
+that drives Chrome over CDP and outputs an accessibility tree + element refs (`@e1`) that an LLM
+reads easily. **The CLI itself costs no tokens — tokens are only spent when you feed its output
+back into context.**
 
-**บทบาท:** Claude = สมอง (อ่าน code → derive test → ตีความ pass/fail → เขียนเอกสาร).
-agent-browser = มือ-ตา (ขับ browser + เก็บหลักฐาน ไม่ตัดสินอะไร).
+**Roles:** Claude = the brain (read code → derive tests → judge pass/fail → write docs).
+agent-browser = the hands & eyes (drive the browser + capture evidence; it decides nothing).
 
-**หลักการ one pass, two outputs:** เดิน happy path รอบเดียว → ได้ทั้ง (1) QA verdict และ
-(2) วัตถุดิบ user guide/bug report.
+**Principle — one pass, two outputs:** walk the happy path once → get both (1) a smoke verdict and
+(2) raw material for a user guide / bug report.
+
+**What to test (beyond the happy path):** test *design* is a brain activity (read code → decide
+which cases to fire) — cheap, never touches the browser. **All adversarial coverage lives there**,
+so it doesn't conflict with token discipline: execution still uses the same short commands. The
+happy-path pass yields guide + smoke; adversarial checks are *separate* passes that return **only
+bug findings**. **Read `references/test-design.md`** when scope goes beyond smoke (Phase 0 system
+map → coverage matrix → edge cases → the split of what runs in-browser vs. what must be derived
+from code).
 
 ---
 
-## 1. ติดตั้ง (ครั้งแรก)
+## 1. Install (first time)
 
 ```bash
-npm install -g agent-browser     # หรือ brew / cargo install agent-browser
-agent-browser install            # โหลด Chrome for Testing (~186MB, ครั้งเดียว)
-agent-browser --version          # ยืนยัน
+npm install -g agent-browser     # or brew / cargo install agent-browser
+agent-browser install            # download Chrome for Testing (~186MB, once)
+agent-browser --version          # confirm
 ```
 
-คู่มือในตัวที่ version-matched (ดีกว่าเดาจาก --help): `agent-browser skills get core --full`
+Version-matched built-in guide (better than guessing from --help): `agent-browser skills get core --full`
 
 ---
 
-## 2. กฎทอง — อ่านก่อนขับ browser (สำคัญสุด)
+## 2. Golden rules — read before driving the browser (most important)
 
-กับดักเหล่านี้ทำให้ automation **พังเงียบ ไม่มี error** — รายละเอียด+หลักฐานเต็มใน
-`references/gotchas.md` แต่จำ 3 ข้อนี้ให้ขึ้นใจ:
+These traps make automation **fail silently, with no error** — full detail + evidence in
+`references/gotchas.md`, but keep these three in mind at all times:
 
-1. **`click` ไม่ auto-scroll** → ถ้าปุ่มอยู่ใต้ fold, click คืน `✓ Done` แต่ตกที่พื้นที่ว่าง
-   ไม่ทำงานจริง. **เรียก `scrollintoview <sel>` ก่อน `click` เสมอ** สำหรับปุ่มท้ายฟอร์ม/ใต้จอ.
-2. **อย่าเชื่อ `✓ Done`** — ต้อง assert state ผลลัพธ์ทุกครั้ง (`wait` element / `get url` /
-   `get text .badge`). คลิกแล้วต้องพิสูจน์ว่าเกิดผล ไม่ใช่แค่คำสั่งคืนค่าสำเร็จ.
-3. **เลี่ยง `wait --text` / `wait <selector>` แบบ long-poll** บน Windows (เจอ `os error 10060`
-   เป็นระยะ) → ใช้ `wait --load networkidle` + เช็ค state ด้วยคำสั่งสั้นแทน.
+1. **`click` does not auto-scroll** → if the button is below the fold, `click` returns `✓ Done`
+   but lands on empty space and does nothing. **Always call `scrollintoview <sel>` before `click`**
+   for buttons at the bottom of a form / below the fold.
+2. **Don't trust `✓ Done`** — always assert the resulting state (`wait` element / `get url` /
+   `get text .badge`). After a click, prove the effect happened; a successful command return is not proof.
+3. **Avoid long-poll `wait --text` / `wait <selector>`** on Windows (intermittent `os error 10060`)
+   → use `wait --load networkidle` + check state with short commands instead.
 
-เสริม: ถ้า native `click`/`find ... click` ยัง flaky ให้ขับด้วย **JS click**
-`eval "document.querySelector('SEL').click()"` (ชัวร์เสมอ — ความคลิกได้จริงของแอปค่อย QA แยก).
+Extra: if native `click` / `find ... click` is still flaky, drive with a **JS click**
+`eval "document.querySelector('SEL').click()"` (always reliable — QA the app's real clickability separately).
 
 ---
 
-## 3. Token discipline (กัน context ล้น)
+## 3. Token discipline (prevent context overflow)
 
-- assertion ใช้คำสั่ง **ผลลัพธ์สั้น** เท่านั้น: `wait`, `is visible/enabled`, `get value/text`,
+- For assertions use only **short-output commands**: `wait`, `is visible/enabled`, `get value/text`,
   `get count`, `errors --json`, `console --json`.
-- **ห้าม** feed `snapshot` ทั้งหน้า หรือ `get html` ดิบกลับเข้า context. ถ้าต้อง snapshot ให้กรอง:
-  `snapshot -i` (interactive-only) หรือ scope `-s "#sel"`.
-- **screenshot = ไฟล์เสมอ** (`--json` คืนแค่ path) — path เข้า context ได้ ภาพไม่ (เว้นจำเป็นจริง).
-- cap output: `--max-output 50000`.
+- **Never** feed a whole-page `snapshot` or raw `get html` back into context. If you must snapshot,
+  filter it: `snapshot -i` (interactive-only) or scope it `-s "#sel"`.
+- **screenshot = always a file** (`--json` returns just the path) — the path may enter context, the
+  image may not (unless truly necessary).
+- Cap output: `--max-output 50000`.
 
-Command reference เต็ม + syntax ที่พลาดบ่อย → `references/commands.md`
+Full command reference + commonly-missed syntax → `references/commands.md`
 
 ---
 
-## 4. Workflow มาตรฐาน (one pass, two outputs)
+## 4. Standard workflow (one pass, two outputs)
 
 ```
 1. open <url> → wait --load networkidle
-2. ก่อนแต่ละ action: screenshot (ไฟล์) เก็บเป็นหลักฐาน/วัตถุดิบ guide
-3. action: scrollintoview → click/fill (หรือ JS click) ด้วย ref @eN หรือ semantic locator
-4. assert ผลลัพธ์ด้วยคำสั่งสั้น (กฎทองข้อ 2)
-5. errors --json → ถ้าไม่ว่าง = FAIL บันทึก error (no silent fallback)
-6. จบ flow: เขียน 2 ไฟล์ — qa-report.md (verdict) + user guide / bug report
+2. before each action: screenshot (file) as evidence / guide material
+3. action: scrollintoview → click/fill (or JS click) with ref @eN or a semantic locator
+4. assert the result with a short command (golden rule #2)
+5. errors --json → if non-empty = FAIL, record the error (no silent fallback)
+6. end of flow: write 2 files — qa-report.md (verdict) + user guide / bug report
 ```
 
-QA 4 ชั้น: (1) Smoke = happy path จบ + errors ว่าง · (2) Functional = assert state ·
-(3) Visual = `diff screenshot --baseline` · (4) Error surfacing = `errors`/`console` หลังทุก step สำคัญ.
+Four QA layers: (1) Smoke = happy path completes + errors empty · (2) Functional = assert state ·
+(3) Visual = `diff screenshot --baseline` · (4) Error surfacing = `errors`/`console` after every key step.
 
-โครง artifact แนะนำ:
+**Store test cases as repeatable files** (regression/repro) → write them as flow YAML:
+`references/flow-spec.md`. **Reduce round-trips / daemon stalls** with `batch` + a pre-flight
+health-check → `references/commands.md`.
+
+Suggested artifact layout:
 ```
 qa/<feature>/
-  qa-report.md          # verdict + ตาราง step + errors
-  shots/                # screenshot ทุก step (artifact ไม่เข้า context)
-  guide/                # เอกสารที่ generate (HTML/PDF) + shots
+  qa-report.md          # verdict + step table + errors
+  shots/                # screenshot per step (artifact, not context)
+  guide/                # generated docs (HTML/PDF) + shots
 ```
 
 ---
 
-## 5. สร้างเอกสาร PDF (user guide / bug report)
+## 5. Produce PDF docs (user guide / bug report)
 
-ทำเอกสารคุณภาพระดับส่งจริง (ปก+โลโก้, สารบัญ+เลขหน้า, FAQ, glossary) จาก run จริง —
-มี template พร้อมใช้ + recipe การทำ PDF ที่เลขหน้าตรง. **อ่าน `references/pdf-reports.md` ก่อนทำ PDF**
-(มีกับดัก paged.js + Chrome printToPDF ที่ทำให้เกิดหน้าว่างสลับ).
+Produce ship-ready docs (cover + logo, table of contents + page numbers, FAQ, glossary) from a real
+run — ready-made templates + a page-number-correct PDF recipe are included. **Read
+`references/pdf-reports.md` before making a PDF** (there are paged.js + Chrome printToPDF traps that
+cause alternating blank pages).
 
-- `assets/guide-template.html` — user guide สไตล์เอกสาร (cover, breadcrumb, screenshot ไฮไลต์,
-  ตารางฟิลด์, คืออะไร/ทำไม/ผลต่อระบบ, FAQ, glossary). แก้แค่ data array.
-- `assets/bug-report-template.html` — bug report (cover, สารบัญ+severity, Steps/Expected/Actual/
-  Evidence/Workaround/Impact). แก้แค่ bug array.
-- `assets/highlight.js` — snippet inject กรอบไฮไลต์ชี้จุดคลิกลง screenshot (ring-only, ไม่มีข้อความ).
+- `assets/guide-template.html` — document-style user guide (cover, breadcrumb, highlighted
+  screenshot, field table, what/why/effect-on-system, FAQ, glossary). Edit only the data array.
+- `assets/bug-report-template.html` — bug report (cover, TOC + severity, Steps/Expected/Actual/
+  Evidence/Workaround/Impact). Edit only the bug array.
+- `assets/highlight.js` — snippet to inject a click-target highlight ring into a screenshot (ring-only, no text).
+- `assets/pointer.js` — snippet `point(sel)` that places a pointer ring marking the focus/click spot (for video/live, see §6).
 
-หัวใจการทำ PDF: ออกแบบ HTML + paged.js → `agent-browser open <html>` → รอ ~6s ให้จัดหน้า →
-`agent-browser pdf <out.pdf>`. **อย่า bake ข้อความไทยลง screenshot** (headless ไม่มีฟอนต์ไทย).
+PDF core: design HTML + paged.js → `agent-browser open <html>` → wait ~6s for layout →
+`agent-browser pdf <out.pdf>`. **Do not bake Thai text into screenshots** (headless has no Thai font).
 
 ---
 
-## เป้าหมายเฉพาะ (NetSuite / APEX)
+## 6. Record video / watch live + pointer marking the active spot
 
-- **NetSuite:** login ผ่าน Chrome profile ที่ login ไว้ (`--profile "Work"` เลี่ยง 2FA ซ้ำ);
-  element ใน iframe → `frame "#sel"` ก่อน snapshot เสร็จแล้ว `frame main`; โหลด async →
-  `wait --fn "window.jQuery && jQuery.active === 0"`.
-- **Porjai APEX:** `--session porjai` แยก isolated; IG cell/button dynamic → semantic locator
-  `find label "..." fill "..."` / `find role button click --name "..."`; ทดสอบ Thai input;
-  `vitals --json` (ถ้ามีใน version นั้น — ตรวจก่อนใช้).
+Record a flow as video or watch the browser live (good for demo/handover). Full commands in
+`references/commands.md`:
+
+- **Video file:** `record start <out.webm> [url]` → walk the flow → `record stop`. **Requires
+  `ffmpeg`**, otherwise `record stop` fails at the end (`ffmpeg not found`) — losing the whole flow.
+  After installing, **restart the daemon** so it picks up the new PATH (see gotchas).
+- **Watch live (no ffmpeg):** `dashboard start` → open `http://localhost:4848` · or `stream enable` (WebSocket).
+
+**Pointer marking the focus/click spot (important for video):** agent-browser drives via CDP/JS —
+**there is no real cursor for the screencast to capture** → the video doesn't show where the action
+happens. Fix by injecting a DOM overlay (a glowing ring) that, being **rendered, gets recorded**.
+Use `assets/pointer.js` (`point(sel)`): call `eval point(sel)` **before every action** with the same
+selector you'll act on → `wait ~600ms` (let the ring move + pulse) → then fill/click. It's idempotent
+(recreates the ring if lost on navigate) and positions via `getBoundingClientRect`. **Verify one
+frame before the real recording** (`eval point` → `screenshot`) to guard against quoting bugs.
+
+---
+
+## Specific targets (NetSuite / APEX)
+
+- **NetSuite:** log in via an already-logged-in Chrome profile (`--profile "<your-profile>"` to
+  avoid repeat 2FA); elements inside an iframe → `frame "#sel"` before snapshot, then `frame main`;
+  async loads → `wait --fn "window.jQuery && jQuery.active === 0"`.
+- **Oracle APEX:** use an isolated `--session <name>`; dynamic Interactive Grid cells/buttons →
+  semantic locators `find label "..." fill "..."` / `find role button click --name "..."`; test Thai
+  input; `vitals --json` (if present in that version — check first).

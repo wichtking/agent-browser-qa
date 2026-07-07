@@ -1,41 +1,42 @@
 # ARCHITECTURE — agent-browser-qa
 
-สถาปัตยกรรม + workflow diagrams (mermaid) ทุก flow. GitHub render mermaid ได้ในตัว.
-สรุปสั้นอยู่ใน [`../README.md`](../README.md) · กับดัก/วิธีแก้ดู [`../references/gotchas.md`](../references/gotchas.md)
+Architecture + workflow diagrams (mermaid) for every flow. GitHub renders mermaid natively.
+A short summary lives in [`../README.md`](../README.md) · traps/fixes are in [`../references/gotchas.md`](../references/gotchas.md)
 
-## TOC
-1. [ภาพรวม: one pass, two outputs](#1-ภาพรวม-one-pass-two-outputs)
-2. [Golden-rule action loop (click อย่างปลอดภัย)](#2-golden-rule-action-loop)
-3. [QA 4 ชั้น](#3-qa-4-ชั้น)
-4. [User-guide / Bug-report PDF pipeline (paged.js)](#4-pdf-pipeline-pagedjs)
+## Contents
+1. [Overview: one pass, two outputs](#1-overview-one-pass-two-outputs)
+2. [Golden-rule action loop (clicking safely)](#2-golden-rule-action-loop)
+3. [Four QA layers](#3-four-qa-layers)
+4. [User-guide / bug-report PDF pipeline (paged.js)](#4-pdf-pipeline-pagedjs)
 5. [Highlight capture sub-flow](#5-highlight-capture-sub-flow)
-6. [เป้าหมาย & setup (Web / NetSuite / APEX)](#6-เป้าหมาย--setup)
+6. [Targets & setup (Web / NetSuite / APEX)](#6-targets--setup)
 
 ---
 
-## 1. ภาพรวม: one pass, two outputs
+## 1. Overview: one pass, two outputs
 
-เดิน happy path **รอบเดียว** → แตกเป็น (1) QA verdict และ (2) วัตถุดิบเอกสาร. Claude เป็นสมอง,
-agent-browser เป็นมือ-ตา, CDP คุย Chrome. ใช้คำสั่ง **ผลสั้น** เพื่อกัน context ล้น.
+Walk the happy path **once** → split into (1) a QA verdict and (2) doc material. Claude is the brain,
+agent-browser is the hands & eyes, CDP talks to Chrome. Use **short-output** commands to avoid
+context overflow.
 
 ```mermaid
 sequenceDiagram
-    participant U as ผู้ใช้
-    participant C as Claude (สมอง)
-    participant A as agent-browser (มือ-ตา)
+    participant U as User
+    participant C as Claude (brain)
+    participant A as agent-browser (hands & eyes)
     participant B as Chrome / CDP
-    U->>C: QA หน้า X แล้วทำคู่มือ/รายงาน
+    U->>C: QA page X and make a guide/report
     C->>A: open URL, wait networkidle
-    A->>B: นำทาง + รอจน idle
-    loop ทุก step
-        C->>A: scrollintoview, screenshot (ไฟล์)
-        C->>A: click / fill (หรือ JS click ถ้า flaky)
-        A->>B: ทำ action
+    A->>B: navigate + wait until idle
+    loop each step
+        C->>A: scrollintoview, screenshot (file)
+        C->>A: click / fill (or JS click if flaky)
+        A->>B: perform action
         C->>A: assert (wait / get url / get text / count)
         C->>A: errors (json)
-        A-->>C: ผลสั้น (token-safe)
+        A-->>C: short output (token-safe)
     end
-    C->>C: ① qa-report.md (verdict + ตาราง step)
+    C->>C: ① qa-report.md (verdict + step table)
     C->>C: ② HTML (template) + paged.js → pdf
     C-->>U: QA verdict + PDF (guide / bug-report)
 ```
@@ -44,93 +45,94 @@ sequenceDiagram
 
 ## 2. Golden-rule action loop
 
-หัวใจที่กัน **false pass**: เลื่อนเข้า viewport ก่อนคลิก, ถ้า native click ไม่ติดให้ใช้ JS click,
-แล้ว **assert ผลลัพธ์เสมอ** — อย่าเชื่อ `✓ Done`.
+The core that prevents **false pass**: scroll into viewport before clicking, fall back to a JS click
+if the native click doesn't land, then **always assert the result** — don't trust `✓ Done`.
 
 ```mermaid
 flowchart TD
-    a["ต้องการ interact element"] --> b{"อยู่ใน viewport?"}
-    b -->|"ใต้ fold / ไม่แน่ใจ"| c["scrollintoview &lt;sel&gt;"]
-    b -->|ใช่| d["click / fill &lt;sel&gt;"]
+    a["want to interact with element"] --> b{"in viewport?"}
+    b -->|"below fold / unsure"| c["scrollintoview &lt;sel&gt;"]
+    b -->|yes| d["click / fill &lt;sel&gt;"]
     c --> d
-    d --> e{"เกิดผลจริงไหม?<br/>(re-render / nav)"}
-    e -->|"ไม่ (native click flaky)"| f["eval: querySelector(sel).click()"]
+    d --> e{"did it actually happen?<br/>(re-render / nav)"}
+    e -->|"no (native click flaky)"| f["eval: querySelector(sel).click()"]
     f --> g
-    e -->|"ดูเหมือนเกิด"| g["assert state<br/>wait / get url / get count"]
-    g --> h{"ผลลัพธ์ตรงคาด?"}
-    h -->|ไม่| x["❌ FAIL → errors --json → บันทึก"]
-    h -->|ใช่| ok["✅ ผ่าน step → ถัดไป"]
+    e -->|"looks like it did"| g["assert state<br/>wait / get url / get count"]
+    g --> h{"result as expected?"}
+    h -->|no| x["❌ FAIL → errors --json → record"]
+    h -->|yes| ok["✅ step passed → next"]
 ```
 
 ---
 
-## 3. QA 4 ชั้น
+## 3. Four QA layers
 
 ```mermaid
 flowchart LR
-    s["1 · Smoke<br/>happy path จบ<br/>+ errors ว่าง"] --> f["2 · Functional<br/>assert state<br/>ด้วยคำสั่งสั้น"]
+    s["1 · Smoke<br/>happy path completes<br/>+ errors empty"] --> f["2 · Functional<br/>assert state<br/>with short commands"]
     f --> v["3 · Visual<br/>diff screenshot<br/>--baseline"]
-    v --> e["4 · Error surfacing<br/>errors/console<br/>หลังทุก step สำคัญ"]
+    v --> e["4 · Error surfacing<br/>errors/console<br/>after every key step"]
 ```
 
-| ชั้น | ทำเมื่อ | คำสั่งหลัก | เกณฑ์ผ่าน |
+| Layer | When | Main commands | Pass criteria |
 |---|---|---|---|
-| Smoke | ทุก commit | `open` · `wait` · `errors` | flow จบ + errors ว่าง |
-| Functional | feature สำคัญ | `is` · `get` · `wait` | state ตรงคาดทุก step |
-| Visual | UI เปลี่ยน | `diff screenshot --baseline` | diff อยู่ในเกณฑ์ |
-| Error surfacing | ทุก step สำคัญ | `errors --json` · `console --json` | error ต้องโผล่ ไม่กลืน |
+| Smoke | every commit | `open` · `wait` · `errors` | flow completes + errors empty |
+| Functional | key features | `is` · `get` · `wait` | state matches at every step |
+| Visual | UI changes | `diff screenshot --baseline` | diff within threshold |
+| Error surfacing | every key step | `errors --json` · `console --json` | errors must surface, not be swallowed |
 
 ---
 
 ## 4. PDF pipeline (paged.js)
 
-`agent-browser pdf` ไม่มี option margin/paper → ใช้ **paged.js** ทำสารบัญ+เลขหน้าจริง.
-กับดักหลักคือ **double-pagination** (หน้าว่างสลับ) — แก้ที่ `@page size` + margin เฉพาะ screen.
+`agent-browser pdf` has no margin/paper option → use **paged.js** for a real TOC + page numbers.
+The main trap is **double-pagination** (alternating blank pages) — fixed via `@page size` + a
+screen-only margin.
 
 ```mermaid
 flowchart TD
-    t["เลือก template<br/>guide / bug-report"] --> ed["แก้ data array<br/>(เนื้อหาจาก run จริง)"]
-    ed --> sh["วาง screenshot ใน shots/"]
+    t["pick a template<br/>guide / bug-report"] --> ed["edit the data array<br/>(content from the real run)"]
+    ed --> sh["place screenshots in shots/"]
     sh --> op["agent-browser open &lt;html&gt;"]
-    op --> wt["wait 6000<br/>(รอ paged.js จัดหน้า)"]
-    wt --> ck{".pagedjs_page count<br/>= ที่คาด?"}
-    ck -->|"เป็น ~2 เท่า (มีหน้าว่าง)"| fx["fix double-pagination:<br/>@page size 182×250mm (เล็กกว่าพื้นที่พิมพ์)<br/>+ .pagedjs_page margin เฉพาะ @media screen"]
+    op --> wt["wait 6000<br/>(let paged.js lay out)"]
+    wt --> ck{".pagedjs_page count<br/>= expected?"}
+    ck -->|"~2x (blank pages)"| fx["fix double-pagination:<br/>@page size 182×250mm (smaller than print area)<br/>+ .pagedjs_page margin only in @media screen"]
     fx --> wt
-    ck -->|ตรง| pd["agent-browser pdf out.pdf"]
-    pd --> vf["เปิด PDF กลับมา screenshot<br/>verify: เลขหน้า · สารบัญ · ไม่มีหน้าว่าง"]
-    vf --> done["✅ PDF พร้อมส่ง"]
+    ck -->|matches| pd["agent-browser pdf out.pdf"]
+    pd --> vf["reopen the PDF and screenshot<br/>verify: page numbers · TOC · no blank pages"]
+    vf --> done["✅ PDF ready to ship"]
 ```
 
-รายละเอียด recipe เต็ม: [`../references/pdf-reports.md`](../references/pdf-reports.md)
+Full recipe: [`../references/pdf-reports.md`](../references/pdf-reports.md)
 
 ---
 
 ## 5. Highlight capture sub-flow
 
-เก็บ screenshot ที่มีกรอบไฮไลต์ชี้จุดคลิก — ฝัง **เฉพาะกรอบ** (ไม่มีข้อความไทย เพราะ headless
-ไม่มีฟอนต์ไทย) แล้วขับ flow ด้วย JS click ให้ชัวร์.
+Capture screenshots with a highlight ring marking the click target — bake in **only the ring** (no
+Thai text, because headless has no Thai font), then drive the flow with a JS click for reliability.
 
 ```mermaid
 flowchart LR
-    nav["นำทางถึงสถานะที่ต้องถ่าย"] --> hl["eval: inject ring บน target<br/>scrollIntoView + outline + glow<br/>🔴 จุดคลิก · 🟢 จุดสังเกตผล"]
+    nav["navigate to the state to capture"] --> hl["eval: inject ring on target<br/>scrollIntoView + outline + glow<br/>🔴 click spot · 🟢 result-observation spot"]
     hl --> shot["screenshot shots/NN.png"]
     shot --> act["eval: querySelector(sel).click()"]
     act --> asrt["assert (get url / get count)"]
     asrt --> nav
 ```
 
-snippet: [`../assets/highlight.js`](../assets/highlight.js)
+Snippet: [`../assets/highlight.js`](../assets/highlight.js)
 
 ---
 
-## 6. เป้าหมาย & setup
+## 6. Targets & setup
 
-| Target | setup / auth | locator strategy | ข้อควรระวัง |
+| Target | setup / auth | locator strategy | watch out for |
 |---|---|---|---|
-| **Web app ทั่วไป** | `open <url>` | `@ref` จาก `snapshot -i` หรือ `[data-test=...]` | scrollintoview ก่อน click ปุ่มใต้ fold |
-| **NetSuite Suitelet** | `--profile "Work"` (reuse session, เลี่ยง 2FA) | `@ref` / css; element ใน iframe → `frame "#sel"` แล้ว `frame main` | โหลด async → `wait --fn "window.jQuery && jQuery.active===0"` |
-| **Oracle APEX** | `--session porjai` (isolated) | semantic: `find label "..." fill "..."` / `find role button click --name "..."` (IG dynamic) | ทดสอบ Thai input ทุกครั้ง; `vitals --json` ถ้ามีใน version นั้น |
+| **Generic web app** | `open <url>` | `@ref` from `snapshot -i` or `[data-test=...]` | scrollintoview before clicking below-fold buttons |
+| **NetSuite Suitelet** | `--profile "<your-profile>"` (reuse session, avoid 2FA) | `@ref` / css; iframe elements → `frame "#sel"` then `frame main` | async loads → `wait --fn "window.jQuery && jQuery.active===0"` |
+| **Oracle APEX** | `--session <name>` (isolated) | semantic: `find label "..." fill "..."` / `find role button click --name "..."` (dynamic IG) | test Thai input every time; `vitals --json` if present in that version |
 
 ---
 
-*แผนภาพทั้งหมดมาจาก workflow จริงที่ใช้ทำ QA + เอกสารด้วย agent-browser 0.27.0 บน Windows.*
+*All diagrams come from the real workflow used to do QA + docs with agent-browser 0.27.0 on Windows.*

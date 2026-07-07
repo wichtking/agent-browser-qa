@@ -5,83 +5,73 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 <p align="center">
-  <img src="docs/banner.png" alt="agent-browser-qa — Browser QA + Docs from one real browser run: Claude Code → agent-browser CLI → Chrome via CDP → target web app, producing a QA verdict and Docs PDF" width="100%">
+  <img src="docs/banner.png" alt="agent-browser-qa: browser QA and docs from one real browser run" width="100%">
 </p>
 
-> A Claude Code / Agent **skill** for browser QA + documentation with [`agent-browser`](https://github.com/vercel-labs/agent-browser) — drive a real browser through a web flow once, get **two outputs**: a QA verdict **and** polished docs (user-guide / bug-report PDF).
+A Claude Code skill for browser QA and documentation, built on [`agent-browser`](https://github.com/vercel-labs/agent-browser). Drive a real browser through a flow once and get two things back: a QA verdict, and a polished user guide or bug report.
 
-Drive the browser with `agent-browser` (a Rust CLI over CDP) to run QA and generate docs from a **real run** — *one pass, two outputs*.
+The reference files under [`references/`](references) are working notes kept in Thai. This README and [`SKILL.md`](SKILL.md) are in English.
 
-> **Note:** the reference files under [`references/`](references) are the author's dense working
-> notes and are kept in Thai. This README and [`SKILL.md`](SKILL.md) are in English.
+## How it works
 
----
-
-## Architecture overview
+Claude reads the code, derives the tests, and judges pass or fail. `agent-browser` (a Rust CLI over CDP) does the driving and captures the evidence. Its output never enters the model's context on its own, so a full pass stays cheap; favor short-output commands to keep it that way.
 
 ```mermaid
 flowchart LR
-    claude["Claude Code<br/>brain: read code → derive tests<br/>→ judge pass/fail → write docs"] -->|"CLI commands"| ab["agent-browser<br/>(Rust · hands & eyes)"]
+    claude["Claude Code<br/>brain: read code, derive tests,<br/>judge pass/fail, write docs"] -->|"CLI commands"| ab["agent-browser<br/>(Rust, hands & eyes)"]
     ab -->|"CDP"| chrome["Chrome for Testing<br/>(headless/headed)"]
     chrome --> targets["targets<br/>Web app · NetSuite Suitelet · APEX"]
-    ab -.->|"snapshot -i / errors<br/>(short output = token-safe)"| claude
+    ab -.->|"snapshot -i / errors<br/>(short output, token-safe)"| claude
     ab -.->|"screenshot (file)"| shots["shots/<br/>(artifact, not context)"]
-    claude --> out1["① QA verdict<br/>qa-report.md"]
-    claude --> out2["② Docs PDF<br/>user-guide / bug-report<br/>(paged.js)"]
+    claude --> out1["QA verdict<br/>qa-report.md"]
+    claude --> out2["Docs PDF<br/>user-guide / bug-report"]
 ```
 
-**Roles:** Claude = the brain (judges pass/fail, writes docs) · agent-browser = the hands & eyes (drives the browser + captures evidence, decides nothing). The CLI costs no tokens — tokens are only spent feeding output back into context, so favor **short-output** commands. Full diagrams for every flow: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)
+Full diagrams for every flow are in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
----
-
-## Process / flows at a glance
+## Flows
 
 | Flow | Steps | Output |
 |---|---|---|
-| **Smoke QA** | `open` → `wait --load networkidle` → walk happy path → `errors` empty | pass / fail |
-| **Functional QA** | action → **`scrollintoview` → `click`** → **assert state** (golden rule) | verdict per step |
-| **Visual regression** | `screenshot` → `diff screenshot --baseline` | `diff.png` |
-| **Error surfacing** | after every key step → `errors --json` + `console --json` | errors must surface, not stay silent |
-| **User-guide PDF** | walk flow + embed highlight ring + screenshot → `guide-template.html` → `pdf` | guide PDF (cover / TOC / page numbers) |
-| **Bug-report PDF** | repro + evidence + severity → `bug-report-template.html` → `pdf` | bug PDF (Steps/Expected/Actual) |
+| Smoke QA | `open` → `wait --load networkidle` → walk happy path → `errors` empty | pass / fail |
+| Functional QA | action → `scrollintoview` → `click` → assert state | verdict per step |
+| Visual regression | `screenshot` → `diff screenshot --baseline` | `diff.png` |
+| Error surfacing | after every key step → `errors --json` + `console --json` | errors surface, not silent |
+| User-guide PDF | walk flow, highlight, screenshot → `guide-template.html` → `pdf` | guide PDF (cover, TOC, page numbers) |
+| Bug-report PDF | repro, evidence, severity → `bug-report-template.html` → `pdf` | bug PDF (Steps/Expected/Actual) |
 
-> **Golden rule:** `click` doesn't auto-scroll → `scrollintoview` first · don't trust `✓ Done` → always assert state. See [`references/gotchas.md`](references/gotchas.md)
+Golden rule: `click` does not auto-scroll, so call `scrollintoview` first; and don't trust `✓ Done`, always assert the resulting state. Details in [`references/gotchas.md`](references/gotchas.md).
 
----
+## Features
 
-## Key features
+- **One pass, two outputs.** A single run gives you the QA verdict and the docs together, so nothing needs a second walkthrough.
+- **Real pages, not mocks.** It drives actual Chrome over CDP against any web app, including NetSuite Suitelets and Oracle APEX, headless or headed.
+- **Deliberate test design.** A Phase 0–3 method turns code and acceptance criteria into a coverage matrix, and states up front which cases a browser can verify and which must come from a code review.
+- **Four QA layers.** Smoke, functional, visual regression, and error surfacing.
+- **Guards against silent failures.** The traps that let automation pass when it shouldn't (below-fold clicks, a fake `✓ Done`, `os 10060`) are written up with reproductions and fixes.
+- **Token-aware.** Assertions are short commands and screenshots are saved to files, so testing a large app doesn't fill the context window.
+- **Reproducible specs.** Test cases live as YAML with `requirement` and `acceptance` fields, so a requirement, its test, and its guide share one id.
+- **Documents that ship.** User guides and bug reports export to PDF with a cover, table of contents, page numbers, and highlighted screenshots.
+- **Records runs.** Capture a flow as video, watch it live, or add a pointer ring so the recording shows where each action lands.
+- **Fits a team.** A lifecycle playbook, a release gate, and a RACI table live in [`docs/TEAM-PROCESS.md`](docs/TEAM-PROCESS.md).
 
-- 🔁 **One pass, two outputs** — a single real browser run yields both a QA verdict **and** the polished user guide / bug report. No second walkthrough to document what you just tested.
-- 🌐 **Real browser, real targets** — drives actual Chrome over CDP (nothing mocked) on any web app — login, checkout, wizard, form, grid — including **NetSuite Suitelets** and **Oracle APEX**, headless or headed.
-- 🎯 **Adversarial test design** — a Phase 0–3 method (system map → coverage matrix → edge cases) that decides *what* to test from code + acceptance criteria, with an explicit **✅ runs-in-browser vs. ⚠️ derive-from-code** split so you never claim coverage the tool can't deliver.
-- 🧪 **Four QA layers** — smoke · functional (assert state) · visual regression (baseline diff) · error surfacing (`errors`/`console` after every key step, so failures never stay silent).
-- 🛡️ **Silent-failure protection** — the traps that make automation *false-pass* (below-fold click, fake `✓ Done`, `os 10060`) are documented with reproductions + fixes and baked into the workflow.
-- 🪙 **Token-disciplined by design** — the CLI's output stays out of the model's context; assertions use short commands, screenshots are files (paths, not pixels). QA a huge app without blowing the context window.
-- 🧾 **Reproducible flow specs** — capture test cases as declarative YAML (`examples/saucedemo.yaml`) with `requirement` / `acceptance` fields, so **requirement → test → guide** all carry one id (auditable coverage).
-- 📄 **Ship-ready docs** — user-guide & bug-report **PDFs** with cover, table of contents, real page numbers, and click-target highlight rings — via paged.js templates you fill with a data array.
-- 🎥 **Record & watch live** — capture a flow as WebM, watch it live on a dashboard, and inject a pointer ring so the video actually shows where each action happens.
-- 👥 **Team-ready** — a lifecycle playbook (Requirement→Design→Dev→Test→Userguide), an acceptance-vs-CI boundary, a release gate, and RACI — see [`docs/TEAM-PROCESS.md`](docs/TEAM-PROCESS.md).
-- ⚡ **Zero-friction install** — one-file `.skill` from Releases or a git clone; a copy-paste [Quick start](#quick-start-hello-world) confirms your setup in ~20 seconds.
-
-## Key gotchas it protects against
+## Gotchas it protects against
 
 | Trap | Symptom | Fix |
 |---|---|---|
-| `click` doesn't auto-scroll | button below fold → CLI `✓ Done` but **nothing happens** | `scrollintoview <sel>` before `click` |
-| Don't trust `✓ Done` | command "succeeds" but has no effect | assert state after every action (`wait` / `get url` / `get text`) |
+| `click` doesn't auto-scroll | button below fold → CLI `✓ Done` but nothing happens | `scrollintoview <sel>` before `click` |
+| Don't trust `✓ Done` | command succeeds but has no effect | assert state after every action (`wait` / `get url` / `get text`) |
 | `os error 10060` | `wait --text` / `wait <selector>` flakes on Windows | use `wait --load networkidle` + short state checks |
 | headless has no Thai font | injected Thai labels render as boxes | put Thai text in the HTML, bake only the ring into the image |
 | `pdf` double-pagination | paged.js PDF gets alternating blank pages | fit `@page size` + `.pagedjs_page` margin on screen only |
 
-Full detail with evidence: [`references/gotchas.md`](references/gotchas.md)
-
----
+Full detail with evidence: [`references/gotchas.md`](references/gotchas.md).
 
 ## Install
 
-**Option A — one file (easiest):** download `agent-browser-qa.skill` from the [**Releases**](https://github.com/wichtking/agent-browser-qa/releases) page and install it via the Claude Code skill installer.
+Option A, one file: download `agent-browser-qa.skill` from the [Releases](https://github.com/wichtking/agent-browser-qa/releases) page and install it through the Claude Code skill installer.
 
-**Option B — clone into your skills dir:**
+Option B, clone into your skills directory:
 ```bash
 git clone https://github.com/wichtking/agent-browser-qa.git ~/.claude/skills/agent-browser-qa
 ```
@@ -92,16 +82,13 @@ npm install -g agent-browser   # or brew / cargo install agent-browser
 agent-browser install          # download Chrome for Testing (first time)
 ```
 
-**Requirements:** Node.js (for `npm install -g`) · optionally `ffmpeg` for `record` (video) ·
-Python 3.10+ and `git` only if you build the `.skill` bundle. Verified with `agent-browser` 0.27.x —
-for other versions run `agent-browser skills get core --full` to get version-matched syntax.
+Requirements: Node.js for `npm install -g`; `ffmpeg` only if you use `record` for video; Python 3.10+ and `git` only if you build the `.skill` bundle. Verified with `agent-browser` 0.27.x. For other versions, run `agent-browser skills get core --full` for version-matched syntax.
 
-> Maintainers: the `.skill` bundle is a build artifact (not committed). Regenerate it with
-> `python scripts/build-skill.py` and attach the output to a GitHub Release.
+Maintainers: the `.skill` bundle is a build artifact and is not committed. Rebuild it with `python scripts/build-skill.py` and attach the output to a GitHub Release.
 
-## Quick start (hello world)
+## Quick start
 
-Confirm your setup with a 20-second smoke — open a page, assert, check for errors, screenshot:
+Confirm your setup with a short smoke run: open a page, assert, check for errors, screenshot.
 
 ```bash
 agent-browser batch \
@@ -109,15 +96,12 @@ agent-browser batch \
   "wait --load networkidle" \
   "get title" \
   "errors" --json
-agent-browser screenshot hello.png     # evidence file (the image, not context)
+agent-browser screenshot hello.png     # evidence file: the image, not context
 ```
 
-Expected: a JSON array where each command has `"success": true`, the title contains
-`Example Domain`, and `errors` is empty.
+Expect a JSON array where each command reports `"success": true`, the title contains `Example Domain`, and `errors` is empty.
 
-> **First run is slow.** A cold browser session can take 1–2 min to start on Windows (it may look
-> hung — it isn't). Keep the session warm and reuse it; if a command keeps failing with
-> `os error 10060`, clear the stale session file — see [`references/gotchas.md`](references/gotchas.md) §3.
+The first run is slow: a cold browser session can take one to two minutes to start on Windows, and may look like it hung when it hasn't. Keep the session warm and reuse it. If commands keep failing with `os error 10060`, clear the stale session file (see [`references/gotchas.md`](references/gotchas.md), section 3).
 
 For a real multi-step flow, see [`examples/saucedemo.yaml`](examples/saucedemo.yaml) and [`references/flow-spec.md`](references/flow-spec.md).
 
@@ -125,48 +109,46 @@ For a real multi-step flow, see [`examples/saucedemo.yaml`](examples/saucedemo.y
 
 ```
 agent-browser-qa/
-├── README.md                      ← this file
-├── SKILL.md                       ← overview · golden rules · workflow
+├── README.md                      this file
+├── SKILL.md                       overview, golden rules, workflow
 ├── docs/
-│   ├── ARCHITECTURE.md            ← workflow diagrams (mermaid) for every flow
-│   └── TEAM-PROCESS.md            ← team playbook: lifecycle, release gate, RACI
-├── references/                    ← dense working notes (Thai)
-│   ├── gotchas.md                 ← silent-failure traps + fixes  ← the core
-│   ├── test-design.md             ← what to test (adversarial coverage, Phase 0-3)
-│   ├── commands.md                ← command reference + token discipline + batch
-│   ├── flow-spec.md               ← write test cases as repeatable flow YAML
-│   └── pdf-reports.md             ← paged.js recipe (TOC, page numbers, fixes)
+│   ├── ARCHITECTURE.md            workflow diagrams (mermaid) for every flow
+│   └── TEAM-PROCESS.md            team playbook: lifecycle, release gate, RACI
+├── references/                    working notes (Thai)
+│   ├── gotchas.md                 silent-failure traps and fixes
+│   ├── test-design.md             what to test (adversarial coverage, Phase 0-3)
+│   ├── commands.md                command reference, token discipline, batch
+│   ├── flow-spec.md               test cases as repeatable flow YAML
+│   └── pdf-reports.md             paged.js recipe (TOC, page numbers, fixes)
 ├── assets/
-│   ├── guide-template.html        ← user-guide PDF (edit the data array)
-│   ├── bug-report-template.html   ← bug-report PDF (edit the bugs array)
-│   ├── highlight.js               ← inject a highlight ring before screenshot
-│   └── pointer.js                 ← place a pointer ring for video/live
+│   ├── guide-template.html        user-guide PDF (edit the data array)
+│   ├── bug-report-template.html   bug-report PDF (edit the bugs array)
+│   ├── highlight.js               inject a highlight ring before screenshot
+│   └── pointer.js                 place a pointer ring for video/live
 ├── examples/
-│   └── saucedemo.yaml             ← runnable flow (happy path + adversarial)
+│   └── saucedemo.yaml             runnable flow (happy path + adversarial)
 └── scripts/
-    └── build-skill.py             ← build the installable .skill bundle (for Releases)
+    └── build-skill.py             build the installable .skill bundle
 ```
 
 ## More docs
 
-- 🏗️ [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — architecture + workflow diagrams (mermaid) for every flow
-- 👥 [`docs/TEAM-PROCESS.md`](./docs/TEAM-PROCESS.md) — team playbook: lifecycle fit, release gate, RACI, artifacts
-- 🪤 [`references/gotchas.md`](./references/gotchas.md) — real-world traps + fixes
-- 🎯 [`references/test-design.md`](./references/test-design.md) — what to test (adversarial coverage)
-- 🧰 [`references/commands.md`](./references/commands.md) — command reference + batch
-- 🧾 [`references/flow-spec.md`](./references/flow-spec.md) — test cases as repeatable flow YAML
-- 📄 [`references/pdf-reports.md`](./references/pdf-reports.md) — how to make PDFs (paged.js)
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — architecture and workflow diagrams for every flow
+- [`docs/TEAM-PROCESS.md`](./docs/TEAM-PROCESS.md) — team playbook: lifecycle, release gate, RACI, artifacts
+- [`references/gotchas.md`](./references/gotchas.md) — traps and fixes
+- [`references/test-design.md`](./references/test-design.md) — what to test (adversarial coverage)
+- [`references/commands.md`](./references/commands.md) — command reference and batch
+- [`references/flow-spec.md`](./references/flow-spec.md) — test cases as repeatable flow YAML
+- [`references/pdf-reports.md`](./references/pdf-reports.md) — how to make PDFs (paged.js)
 
-## Credits / built on
+## Credits
 
-This skill is only a **playbook wrapping** an upstream tool — it does not reproduce or replace the CLI:
+This skill is a playbook around an upstream tool; it does not reproduce or replace the CLI.
 
-- 🧰 **[vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser)** — the Rust CLI that drives Chrome over CDP (the actual engine). This skill just collects usage + gotchas + doc templates. Credit and license for the CLI belong to the upstream authors.
-- 🌐 Examples / evidence runs use **[saucedemo.com](https://www.saucedemo.com)** (the Sauce Labs demo app)
-- 📄 PDF pagination via **[Paged.js](https://pagedjs.org/)**
+- [vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) — the Rust CLI that drives Chrome over CDP. This skill collects usage, gotchas, and doc templates around it. Credit and license for the CLI belong to the upstream authors.
+- [saucedemo.com](https://www.saucedemo.com) — the Sauce Labs demo app used for examples and evidence runs.
+- [Paged.js](https://pagedjs.org/) — PDF pagination.
 
 ## License
 
-[MIT](LICENSE) © 2026 Wichit Wongta  ·  (the `agent-browser` CLI is under vercel-labs' own license)
-
-*Templates and gotchas come from real runs on saucedemo.com with `agent-browser` 0.27.0 on Windows.*
+[MIT](LICENSE) © 2026 Wichit Wongta. The `agent-browser` CLI is under vercel-labs' own license.

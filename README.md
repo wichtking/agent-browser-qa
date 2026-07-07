@@ -49,11 +49,19 @@ flowchart LR
 
 ---
 
-## What it does
+## Key features
 
-- **Browser QA** — smoke / functional / visual-regression / error-surfacing on any web app (login, checkout, wizard, form, grid), including NetSuite Suitelets & Oracle APEX.
-- **Docs from the same run** — turn a tested flow into a **user-guide** or **bug-report PDF** (cover, TOC, page numbers, screenshots with highlight rings) using the included templates.
-- **Hard-won gotchas baked in** — the traps that make automation *fail silently* are documented with reproductions + fixes.
+- 🔁 **One pass, two outputs** — a single real browser run yields both a QA verdict **and** the polished user guide / bug report. No second walkthrough to document what you just tested.
+- 🌐 **Real browser, real targets** — drives actual Chrome over CDP (nothing mocked) on any web app — login, checkout, wizard, form, grid — including **NetSuite Suitelets** and **Oracle APEX**, headless or headed.
+- 🎯 **Adversarial test design** — a Phase 0–3 method (system map → coverage matrix → edge cases) that decides *what* to test from code + acceptance criteria, with an explicit **✅ runs-in-browser vs. ⚠️ derive-from-code** split so you never claim coverage the tool can't deliver.
+- 🧪 **Four QA layers** — smoke · functional (assert state) · visual regression (baseline diff) · error surfacing (`errors`/`console` after every key step, so failures never stay silent).
+- 🛡️ **Silent-failure protection** — the traps that make automation *false-pass* (below-fold click, fake `✓ Done`, `os 10060`) are documented with reproductions + fixes and baked into the workflow.
+- 🪙 **Token-disciplined by design** — the CLI's output stays out of the model's context; assertions use short commands, screenshots are files (paths, not pixels). QA a huge app without blowing the context window.
+- 🧾 **Reproducible flow specs** — capture test cases as declarative YAML (`examples/saucedemo.yaml`) with `requirement` / `acceptance` fields, so **requirement → test → guide** all carry one id (auditable coverage).
+- 📄 **Ship-ready docs** — user-guide & bug-report **PDFs** with cover, table of contents, real page numbers, and click-target highlight rings — via paged.js templates you fill with a data array.
+- 🎥 **Record & watch live** — capture a flow as WebM, watch it live on a dashboard, and inject a pointer ring so the video actually shows where each action happens.
+- 👥 **Team-ready** — a lifecycle playbook (Requirement→Design→Dev→Test→Userguide), an acceptance-vs-CI boundary, a release gate, and RACI — see [`docs/TEAM-PROCESS.md`](docs/TEAM-PROCESS.md).
+- ⚡ **Zero-friction install** — one-file `.skill` from Releases or a git clone; a copy-paste [Quick start](#quick-start-hello-world) confirms your setup in ~20 seconds.
 
 ## Key gotchas it protects against
 

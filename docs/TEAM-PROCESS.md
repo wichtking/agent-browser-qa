@@ -21,11 +21,11 @@ flowchart LR
     T --> G["Userguide"]
     G --> Rel(["Release"])
 
-    D -. "AC → coverage matrix" .-> TD["test-design.md"]
+    D -.->|"AC to coverage matrix"| TD["test-design.md"]
     TD --> FS["flow.yaml<br/>(requirement + acceptance)"]
     FS --> T
-    T -. "one pass, two outputs" .-> QA["qa-report.md"]
-    T -. same run .-> G
+    T -.->|"one pass, two outputs"| QA["qa-report.md"]
+    T -.->|"same run"| G
 
     classDef tool fill:#1f2937,stroke:#38bdf8,color:#e5e7eb;
     class TD,FS,QA tool

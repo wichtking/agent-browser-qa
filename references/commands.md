@@ -72,6 +72,53 @@ wait "<selector>"  / wait --text "<text>"          # long-poll — เจอ os 
 wait <ms>                       # เฉพาะ clientside toggle สั้นๆ + verify
 ```
 
+## Batch — ลด round-trip / daemon stall (efficiency)
+ยิงหลายคำสั่งใน invocation เดียวแทนที่จะเรียก CLI ทีละครั้ง → ลด process spawn + โอกาส daemon สะดุด
+ระหว่าง flow ยาว (เจอ os 10060 น้อยลง) + log เป็นก้อนเดียว. `batch [--bail] "<cmd>" ...`
+รับคำสั่งเป็น **quoted args** หรือ **JSON ผ่าน stdin** (ไม่ใช่ path ไฟล์):
+```
+# quoted args (default = รันต่อแม้ error; --bail = หยุดที่ error แรก):
+agent-browser batch "open <url>" "wait --load networkidle" "get url" "errors" --json
+# หรือ pipe JSON: echo '["get url","get title"]' | agent-browser batch --json
+```
+- **`--json` ของ batch คืน array** `[{command, result, error, success}, ...]` — `result` อยู่ตรงๆ
+  (ไม่ห่อ `data{}` แบบ single-command). verify แล้วบน v0.27.0. ใช้เป็น `run-log.json` ได้เลย.
+- ref `@eN` persist ข้ามคำสั่งใน batch (daemon เก็บ browser). ถ้าไม่ batch: chain ด้วย `&&` ในเชลล์ก็ได้.
+- **อย่าใส่ assertion ที่ output ยาว** (snapshot เต็ม/get html) ลง batch — ผลรวมกลับ context ทั้งก้อน.
+  batch เก็บเฉพาะคำสั่งสั้น (navigate/fill/click/get/errors) ตาม token discipline.
+
+## Pre-flight health-check — กัน cold-start 10060 loop (efficiency)
+ก่อนเริ่ม flow ยาว เช็ค daemon+session ให้ warm ก่อน เลี่ยงลูป cold-start ที่ช้าเป็นนาที (ดู gotchas):
+```
+agent-browser get url --session <name> || {           # ถ้า block/10060 = session ค้าง
+  # ลบ session file ที่ชี้ daemon ตาย แล้วให้ CLI spawn ใหม่:
+  # PowerShell: Remove-Item "$env:USERPROFILE\.agent-browser\<name>.*"
+  agent-browser open about:blank --session <name>      # pre-warm (poll จน get url คืน URL)
+}
+```
+- ใช้ **fixed session** ตลอด flow (`--session uiqarun`) + **อย่า `close --all`** ระหว่างทาง (ใช้ `reload`
+  รีเซ็ต state แทน) — เลี่ยง cold relaunch ที่ค้าง CLI >2 นาที.
+- ถ้าจะ `record`/`ffmpeg`: warm-up `record start`+action สั้น+`record stop` 1 รอบให้ได้ไฟล์ก่อนอัด flow จริง.
+
 ## Session / Auth / Tabs
 `state save|load|clear` · `auth save|login` · `--profile` (เลี่ยง 2FA) · `--session <name>` ·
 `tab new|close|<id>` · `frame "#sel"` / `frame main` (เข้า/ออก iframe) · `mcp` (เป็น MCP server)
+
+## Record วิดีโอ / Live (demo / ส่งมอบ)
+| คำสั่ง | หมายเหตุ |
+|---|---|
+| `record start <out.webm> [url]` … `record stop` | อัด flow เป็นวิดีโอ WebM/VP8. **ต้องมี `ffmpeg`** (ดู gotchas — ติดตั้งแล้วต้อง restart daemon) |
+| `stream enable [--port <n>]` · `stream status` · `stream disable` | live WebSocket streaming (ไม่ต้อง ffmpeg) |
+| `dashboard start [--port <n>]` (default 4848) · `dashboard stop` | หน้า observability ดู browser + console/network สด (ไม่ต้อง ffmpeg) → เปิด `http://localhost:4848` |
+
+**pointer ชี้จุด focus/คลิกในวิดีโอ** (CDP screencast ไม่จับ OS cursor → inject DOM overlay แทน):
+ใช้ `assets/pointer.js` — เรียก `eval point(sel)` ก่อนทุก action → `wait ~600ms` → fill/click. ตัวอย่าง:
+```
+PT="(function(s){var p=document.getElementById('__ptr');if(!p){p=document.createElement('div');p.id='__ptr';p.style.cssText='position:fixed;z-index:2147483647;width:26px;height:26px;margin:-13px 0 0 -13px;border:3px solid #ff2d55;border-radius:50%;background:rgba(255,45,85,.2);box-shadow:0 0 0 5px rgba(255,45,85,.22),0 0 16px #ff2d55;pointer-events:none;transition:left .45s ease,top .45s ease;left:50%;top:50%';document.body.appendChild(p);}var e=document.querySelector(s);if(!e)return 'noel:'+s;e.scrollIntoView({block:'center'});var r=e.getBoundingClientRect();p.style.left=(r.left+r.width/2)+'px';p.style.top=(r.top+r.height/2)+'px';p.animate([{transform:'scale(1.8)'},{transform:'scale(1)'}],{duration:450});return 'ok';})"
+agent-browser record start flow.webm <url>
+agent-browser eval "$PT('#user-name')" && agent-browser wait 650 && agent-browser fill '#user-name' 'x'
+# ... point ก่อนทุก action ...
+agent-browser record stop
+```
+- ใส่ paced `wait 500-900` ระหว่าง action ให้วิดีโอเห็นการเคลื่อนไหว (ไม่งั้น action กระโดดเร็วเกินดูไม่ทัน).
+- verify ด้วย `ffprobe` (duration/ขนาด) + ดึงเฟรม `ffmpeg -ss <t> -i flow.webm -vframes 1 frame.png` มาเช็ค pointer.

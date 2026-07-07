@@ -94,7 +94,8 @@ agent-browser-qa/
 ├── README.md                      ← this file
 ├── SKILL.md                       ← overview · golden rules · workflow
 ├── docs/
-│   └── ARCHITECTURE.md            ← workflow diagrams (mermaid) for every flow
+│   ├── ARCHITECTURE.md            ← workflow diagrams (mermaid) for every flow
+│   └── TEAM-PROCESS.md            ← team playbook: lifecycle, release gate, RACI
 ├── references/                    ← dense working notes (Thai)
 │   ├── gotchas.md                 ← silent-failure traps + fixes  ← the core
 │   ├── test-design.md             ← what to test (adversarial coverage, Phase 0-3)
@@ -113,6 +114,7 @@ agent-browser-qa/
 ## More docs
 
 - 🏗️ [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — architecture + workflow diagrams (mermaid) for every flow
+- 👥 [`docs/TEAM-PROCESS.md`](./docs/TEAM-PROCESS.md) — team playbook: lifecycle fit, release gate, RACI, artifacts
 - 🪤 [`references/gotchas.md`](./references/gotchas.md) — real-world traps + fixes
 - 🎯 [`references/test-design.md`](./references/test-design.md) — what to test (adversarial coverage)
 - 🧰 [`references/commands.md`](./references/commands.md) — command reference + batch

@@ -4,8 +4,8 @@ This skill is a test-and-userguide engine, not a full SDLC tool. This playbook w
 flow (Requirement, Design, Dev, Test, Userguide) and sets out the bridges, boundaries, ownership, and
 release gate, so results stay consistent and traceable whoever runs them.
 
-The key boundary: this is the acceptance, exploratory, and documentation pass that a person and agent
-run before a release. It is not the deterministic CI regression suite. Keep the two separate
+✋ The key boundary: this is the acceptance, exploratory, and documentation pass that a person and
+agent run before a release. It is not the deterministic CI regression suite. Keep the two separate
 (see section 4).
 
 ---
@@ -49,15 +49,15 @@ Acceptance Criteria and produces both a QA verdict and the user guide from the s
 - Feed both the Acceptance Criteria and the code into
   [`../references/test-design.md`](../references/test-design.md): the AC drive the happy and
   functional coverage; the code drives the branch, edge, and adversarial coverage the AC don't spell out.
-- Use its in-browser vs. code-only split as a contract with Dev (see section 3).
+- Use its ✅ in-browser vs. ⚠️ code-only split as a contract with Dev (see section 3).
 
 ### 3. Dev (what belongs where)
 | Concern | Owner | Where it's tested |
 |---|---|---|
-| Rendered UI: forms, navigation, visual, error surfacing | QA (this skill) | `flow.yaml` scenarios |
-| Logic boundaries, race/concurrency, governance, SQL, rollback | Dev | unit / integration tests |
+| ✅ Rendered UI: forms, navigation, visual, error surfacing | QA (this skill) | `flow.yaml` scenarios |
+| ⚠️ Logic boundaries, race/concurrency, governance, SQL, rollback | Dev | unit / integration tests |
 
-The code-only rows in `test-design.md` are not covered by the browser. Dev must cover them, and the
+The ⚠️ code-only rows in `test-design.md` are not covered by the browser. Dev must cover them, and the
 QA report should cite them as verified by dev tests or unverified in browser, never marked Pass.
 
 ### 4. Test (two distinct roles, kept separate)

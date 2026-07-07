@@ -59,8 +59,8 @@ flowchart TD
     f --> g
     e -->|"looks like it did"| g["assert state<br/>wait / get url / get count"]
     g --> h{"result as expected?"}
-    h -->|no| x["FAIL: errors --json, record"]
-    h -->|yes| ok["step passed, go to next"]
+    h -->|no| x["❌ FAIL: errors --json, record"]
+    h -->|yes| ok["✅ step passed, go to next"]
 ```
 
 ---
@@ -114,7 +114,7 @@ since headless has no Thai font), then drive the flow with a JS click for reliab
 
 ```mermaid
 flowchart LR
-    nav["navigate to the state to capture"] --> hl["eval: inject ring on target<br/>scrollIntoView + outline + glow<br/>red = click spot, green = result spot"]
+    nav["navigate to the state to capture"] --> hl["eval: inject ring on target<br/>scrollIntoView + outline + glow<br/>🔴 click spot · 🟢 result spot"]
     hl --> shot["screenshot shots/NN.png"]
     shot --> act["eval: querySelector(sel).click()"]
     act --> asrt["assert (get url / get count)"]

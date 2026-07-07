@@ -6,7 +6,7 @@ Run this to (re)generate it, then attach the output to a GitHub Release.
 
     python scripts/build-skill.py
 
-Bundle contents: SKILL.md + assets/* + references/* under an
+Bundle contents: SKILL.md + assets/* + references/* + examples/* under an
 `agent-browser-qa/` prefix. README, docs, LICENSE and .git are excluded.
 """
 import glob
@@ -21,6 +21,7 @@ def main():
     files = ["SKILL.md"]
     files += sorted(glob.glob("assets/*", root_dir=ROOT))
     files += sorted(glob.glob("references/*", root_dir=ROOT))
+    files += sorted(glob.glob("examples/*", root_dir=ROOT))
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
         for f in files:
             z.write(os.path.join(ROOT, f), "agent-browser-qa/" + f.replace("\\", "/"))

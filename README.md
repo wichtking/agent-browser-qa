@@ -84,8 +84,34 @@ npm install -g agent-browser   # or brew / cargo install agent-browser
 agent-browser install          # download Chrome for Testing (first time)
 ```
 
+**Requirements:** Node.js (for `npm install -g`) · optionally `ffmpeg` for `record` (video) ·
+Python 3.10+ and `git` only if you build the `.skill` bundle. Verified with `agent-browser` 0.27.x —
+for other versions run `agent-browser skills get core --full` to get version-matched syntax.
+
 > Maintainers: the `.skill` bundle is a build artifact (not committed). Regenerate it with
 > `python scripts/build-skill.py` and attach the output to a GitHub Release.
+
+## Quick start (hello world)
+
+Confirm your setup with a 20-second smoke — open a page, assert, check for errors, screenshot:
+
+```bash
+agent-browser batch \
+  "open https://example.com" \
+  "wait --load networkidle" \
+  "get title" \
+  "errors" --json
+agent-browser screenshot hello.png     # evidence file (the image, not context)
+```
+
+Expected: a JSON array where each command has `"success": true`, the title contains
+`Example Domain`, and `errors` is empty.
+
+> **First run is slow.** A cold browser session can take 1–2 min to start on Windows (it may look
+> hung — it isn't). Keep the session warm and reuse it; if a command keeps failing with
+> `os error 10060`, clear the stale session file — see [`references/gotchas.md`](references/gotchas.md) §3.
+
+For a real multi-step flow, see [`examples/saucedemo.yaml`](examples/saucedemo.yaml) and [`references/flow-spec.md`](references/flow-spec.md).
 
 ## Project structure
 
@@ -107,6 +133,8 @@ agent-browser-qa/
 │   ├── bug-report-template.html   ← bug-report PDF (edit the bugs array)
 │   ├── highlight.js               ← inject a highlight ring before screenshot
 │   └── pointer.js                 ← place a pointer ring for video/live
+├── examples/
+│   └── saucedemo.yaml             ← runnable flow (happy path + adversarial)
 └── scripts/
     └── build-skill.py             ← build the installable .skill bundle (for Releases)
 ```

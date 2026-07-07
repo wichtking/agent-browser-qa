@@ -1,0 +1,110 @@
+# Example flow — saucedemo.com: Login → Add to cart → Checkout.
+# Runnable end-to-end and used as the reference for references/flow-spec.md.
+# Drive it step-by-step with agent-browser (see SKILL.md §4), or batch the steps.
+
+story: saucedemo
+title: Swag Labs — end-to-end purchase
+ticket: DEMO-1                     # link back to the requirement (traceability)
+
+vars:                              # {{name}} placeholders; secret:true = password input
+  - { name: base_url,   label: URL,          default: "https://www.saucedemo.com" }
+  - { name: username,   label: Username,     default: "standard_user" }
+  - { name: password,   label: Password,     default: "secret_sauce", secret: true }
+  - { name: first_name, label: First name,   default: "Ada" }
+  - { name: last_name,  label: Last name,    default: "Lovelace" }
+  - { name: postal,     label: Postal code,  default: "10110" }
+
+scenarios:
+  # ---- Happy path (also generates the user guide: doc: true) ----
+  - id: checkout
+    doc: true
+    requirement: DEMO-1
+    acceptance: >
+      Given a valid user, When they log in, add an item, and complete checkout,
+      Then the order-complete confirmation is shown.
+    steps:
+      - intent: "Open the login page"
+        action: open
+        target: "{{base_url}}"
+        wait: networkidle
+
+      - intent: "Enter username"
+        action: fill
+        target: "#user-name"
+        value: "{{username}}"
+
+      - intent: "Enter password"
+        action: fill
+        target: "#password"
+        value: "{{password}}"
+
+      - intent: "Click Login → land on the products page"
+        action: click
+        target: "#login-button"
+        wait: networkidle
+        assert: { url_contains: "/inventory.html" }
+
+      - intent: "Add Sauce Labs Backpack to the cart"
+        action: click
+        target: "#add-to-cart-sauce-labs-backpack"
+        wait: 600
+        assert: { target: ".shopping_cart_badge", contains: "1" }
+
+      - intent: "Open the cart"
+        action: click
+        target: ".shopping_cart_link"
+        wait: networkidle
+        assert: { url_contains: "/cart.html" }
+
+      - intent: "Click Checkout"
+        action: click
+        target: "#checkout"
+        wait: networkidle
+        assert: { url_contains: "/checkout-step-one.html" }
+
+      - intent: "Fill in shipping details"
+        action: fill
+        target: "#first-name"
+        value: "{{first_name}}"
+      - intent: "Fill last name"
+        action: fill
+        target: "#last-name"
+        value: "{{last_name}}"
+      - intent: "Fill postal code"
+        action: fill
+        target: "#postal-code"
+        value: "{{postal}}"
+
+      - intent: "Continue to the overview"
+        action: click
+        target: "#continue"
+        wait: networkidle
+        assert: { url_contains: "/checkout-step-two.html" }
+
+      - intent: "Finish the order"
+        action: click
+        target: "#finish"
+        wait: networkidle
+        assert: { target: ".complete-header", contains: "Thank you" }
+
+  # ---- Adversarial (bug hunting; not part of the guide: doc: false) ----
+  - id: login-empty-password
+    doc: false
+    requirement: DEMO-2
+    acceptance: >
+      Given the login form, When the password is empty, Then a visible error is
+      surfaced (never a silent pass).
+    steps:
+      - intent: "Open login"
+        action: open
+        target: "{{base_url}}"
+        wait: networkidle
+      - intent: "Enter username only"
+        action: fill
+        target: "#user-name"
+        value: "{{username}}"
+      - intent: "Submit with empty password"
+        action: click
+        target: "#login-button"
+        wait: 400
+        assert: { target: "[data-test='error']", contains: "Password is required" }

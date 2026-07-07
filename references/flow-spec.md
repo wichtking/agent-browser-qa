@@ -1,8 +1,8 @@
 # Flow Spec — เขียน test case เป็นไฟล์ reproducible
 
 test-design.md ตัดสิน *จะทดสอบอะไร*. ไฟล์นี้บอก *เก็บ test case ยังไงให้รันซ้ำได้* —
-เขียน flow เป็น YAML declarative แทน ad-hoc command ต่อรอบ. รูปแบบเดียวกับ
-`qa-runner-ui/flows/*.yaml` (มี runner ขับผ่าน UI ได้: `node server.js` → localhost:5170).
+เขียน flow เป็น YAML declarative แทน ad-hoc command ต่อรอบ. ตัวอย่างรันได้จริง:
+`examples/saucedemo.yaml`.
 
 **ทำไมต้องเป็นไฟล์:** 1 flow file = 1 repro ถาวร (กติกา "1 bug = 1 repro"), diff ได้, รันซ้ำ
 regression ได้, เติม vars ต่างค่าเพื่อยิง edge case ได้โดยไม่แก้ logic.
@@ -42,7 +42,8 @@ scenarios:
 
 **Traceability (สำหรับทีม):** `ticket`/`requirement` + `acceptance` ทำให้ตอบได้ว่า *test นี้ยืนยัน
 req ไหน* และ *req นี้ครอบด้วย scenario ไหน*. 1 acceptance criterion → 1 scenario (map 1:1) →
-qa-report + user-guide อ้าง req เดียวกัน = ปิด loop req→test→doc. ดู `docs/TEAM-PROCESS.md`.
+qa-report + user-guide อ้าง req เดียวกัน = ปิด loop req→test→doc. ดู playbook ทีมใน repo:
+`docs/TEAM-PROCESS.md`.
 
 ---
 
@@ -70,4 +71,5 @@ qa/<feature>/
   guide/               # user-guide / bug-report ที่ generate
 ```
 
-ตัวอย่างจริงพร้อมรัน: `qa-runner-ui/flows/saucedemo.yaml` (login→cart→checkout, css+assert ครบ).
+ตัวอย่างจริงพร้อมรัน: `examples/saucedemo.yaml` (login→cart→checkout happy path `doc:true` +
+adversarial `doc:false`, มี requirement/acceptance + assert ครบ).

@@ -8,7 +8,9 @@ __pycache__/
 *.pyc
 
 # QA run artifacts (don't publish scratch screenshots/logs)
-qa/
+qa/*
+# but ship the coverage manifest template
+!qa/_template/
 *-workspace/
 *.log
 

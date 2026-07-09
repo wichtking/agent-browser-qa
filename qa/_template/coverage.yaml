@@ -1,0 +1,19 @@
+# Coverage manifest — one row per Acceptance Criterion (AC).
+# The release gate is computed from this file: scripts/coverage-check.py <this>.
+# Copy to qa/<feature>/coverage.yaml and fill it in from the real run.
+# See references/coverage-model.md for the full model and gate rules.
+
+feature: <name>                  # feature under test (label only; flow.yaml keeps `story:`)
+updated: 2026-01-01              # YYYY-MM-DD — when this manifest was last updated
+
+acceptance_criteria:
+  - id: AC-001
+    requirement: <ticket id>      # PROJ-123 — the ticket this AC came from (tracked)
+    description: <short>          # one line: what must be true
+    flow_scenario: null          # SC-001 in flow.yaml that proves it; null => not_tested
+    verifiable: browser          # browser | code-only (code-only rows are Dev-owned)
+    result: not_tested           # pass | fail | not_tested | blocked
+    severity: null               # critical | high | medium | low  (required when result=fail)
+    quarantine: false            # true => flaky, not counted as pass, flagged (Phase 3)
+    last_run: null               # YYYY-MM-DD of the run that set `result`
+    evidence: null               # path to screenshot / qa-report.md anchor

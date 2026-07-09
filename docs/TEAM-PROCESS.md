@@ -81,14 +81,25 @@ one-time task.
 
 ## Release gate
 
-A release is blocked until:
-1. Every Acceptance Criterion maps to a scenario that actually ran (no "not tested" on an AC).
-2. The adversarial pass ran, not just smoke, for the changed areas.
-3. No Critical or High severity bug is open. Medium and Low may ship with a tracked ticket.
-4. The user guide was regenerated if any covered UI changed.
+The gate is an exit code, not a judgement call. Maintain a coverage manifest per feature
+(`qa/<feature>/coverage.yaml`, one row per Acceptance Criterion) and run:
+
+```
+python scripts/coverage-check.py qa/<feature>/coverage.yaml   # release blocked unless exit 0
+```
+
+Exit 0 requires that every AC maps to a scenario that ran and passed, with no Critical/High bug
+open and nothing quarantined. Exit 1 means at least one AC is not_tested, blocked, quarantined, or a
+Critical/High fail. Exit 2 means the manifest itself is broken (surfaced, never a silent pass). Full
+model and status rules: [`../references/coverage-model.md`](../references/coverage-model.md).
+
+Two checks the script cannot make, so keep them on the checklist:
+1. The adversarial pass ran, not just smoke, for the changed areas.
+2. The user guide was regenerated if any covered UI changed.
 
 Severity guide: Critical is data loss, wrong money, or security. High is a core AC broken with no
-workaround. Medium is an AC that works but only with a workaround. Low is cosmetic.
+workaround. Medium is an AC that works but only with a workaround. Low is cosmetic. Medium and Low
+fails do not block the exit code but must ship with a tracked ticket.
 
 ---
 

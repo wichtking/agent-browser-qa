@@ -78,6 +78,9 @@ scenarios:
     # --- visual (Phase 5 — ดู visual-regression.md) ---
     mask_regions: []               # default: [] — CSS selectors ของ dynamic content (date/running number)
     diff_threshold: 0.02           # default: 0.02 (2%) — pixel diff ที่ยอมได้ กัน anti-aliasing
+
+    # --- CI candidate (Phase 6 — เกณฑ์ graduate ใน TEAM-PROCESS.md) ---
+    ci_candidate: false            # default: false — true = flow นิ่งพอจะ port เข้า Playwright CI
 ```
 
 `fixtures`/`teardown` เก็บเป็น **ref ไปไฟล์** ไม่ฝัง logic ลง flow.yaml (คง brain/hands).

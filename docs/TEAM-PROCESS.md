@@ -72,6 +72,17 @@ Do not turn `flow.yaml` runs into the CI suite. The gotchas (ffmpeg, session sta
 single-machine realities that make it flaky in CI. A stable subset of flows can be ported to
 Playwright for CI, but that is a separate, deterministic artifact.
 
+**Graduating a flow to Playwright CI.** Mark a scenario `ci_candidate: true` (flow.yaml) only when
+it has earned it, then port it. Criteria:
+- It is a happy or functional path (not an exploratory/adversarial hunt).
+- It has run green for 3+ consecutive releases with no quarantine in that window.
+- It depends on no single-machine gotcha (no ffmpeg/video, no `--profile` session reuse, no manual
+  2FA) and its data is seeded idempotently (Phase 2) so a clean CI runner can set it up.
+- Its assertions are deterministic (no reliance on wall-clock time or a running number's value).
+
+The ported Playwright test is the CI artifact; the `flow.yaml` scenario stays as the acceptance/repro
+source. `ci_candidate` only signals readiness — it does not turn the flow.yaml run into CI.
+
 ### 5. Userguide (regenerate every release)
 The guide comes from a real run, so it is only correct for the UI at run time. A UI change silently
 invalidates it. Put "regenerate the guide" on the release checklist rather than treating it as a

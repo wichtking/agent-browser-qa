@@ -89,6 +89,23 @@ prompt ทั่วไปครอบคลุมทุก edge case แต่ *
 - **Auth / Permission** — ไม่มีสิทธิ์, session หมด, ข้าม scope
 - **Error handling** — error ต้อง surface ชัด ห้าม silent fallback/swallow; ตรวจว่า log + propagate จริง
 
+### Security checklist (รวมจุดเดียว)
+
+ยิงทุกครั้งที่แตะ input, auth, หรือ logging — 3 หมวดนี้เป็น security ที่ browser ยิงได้บางส่วน (✅) และ
+บางส่วน ⚠️ ต้อง code review:
+
+- **Injection (✅ input)** — ยิง SQL / `<script>` / template / command payload เป็นค่าใน field แล้ว
+  assert ว่า **ถูก escape/reject** ไม่ execute และไม่สะท้อนกลับดิบ (stored + reflected XSS). ไทย/Unicode
+  ใน 4 payload ด้วย.
+- **Auth / authz cross-scope (✅ ผ่าน URL/session)** — เข้าถึงโดยไม่มีสิทธิ์, session หมดกลางคัน,
+  **แก้ URL ข้าม scope** (record/subsidiary/tenant ของคนอื่น) → ต้องถูกปฏิเสธ ไม่ใช่หลุด. true
+  concurrency/lock ยังเป็น ⚠️ (code/backend).
+- **Sensitive data in logs (⚠️ code + ✅ console)** — password / token / PII **ต้องไม่โผล่** ใน
+  `console --json`, network response ที่เห็นได้, หรือ error message. ตรวจ `console`/`errors` ว่าไม่มี
+  ความลับรั่ว; log ฝั่ง server = code review.
+
+กติกาเดิมยังใช้: อะไรที่ browser พิสูจน์ไม่ได้ → "derived from code, unverified in browser" อย่า mark Pass.
+
 ---
 
 ## Phase 3 — รายงานผล

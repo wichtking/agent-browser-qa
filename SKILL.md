@@ -127,28 +127,17 @@ cause alternating blank pages).
 - `assets/highlight.js` — snippet to inject a click-target highlight ring into a screenshot (ring-only, no text).
 - `assets/pointer.js` — snippet `point(sel)` that places a pointer ring marking the focus/click spot (for video/live, see §6).
 
-PDF core: design HTML + paged.js → `agent-browser open <html>` → wait ~6s for layout →
-`agent-browser pdf <out.pdf>`. **Do not bake Thai text into screenshots** (headless has no Thai font).
+**Do not bake Thai text into screenshots** (headless has no Thai font). Full PDF recipe (paged.js,
+the double-pagination fix, page-number verification) → `references/pdf-reports.md`.
 
 ---
 
-## 6. Record video / watch live + pointer marking the active spot
+## 6. Record video / watch live
 
-Record a flow as video or watch the browser live (good for demo/handover). Full commands in
-`references/commands.md`:
-
-- **Video file:** `record start <out.webm> [url]` → walk the flow → `record stop`. **Requires
-  `ffmpeg`**, otherwise `record stop` fails at the end (`ffmpeg not found`) — losing the whole flow.
-  After installing, **restart the daemon** so it picks up the new PATH (see gotchas).
-- **Watch live (no ffmpeg):** `dashboard start` → open `http://localhost:4848` · or `stream enable` (WebSocket).
-
-**Pointer marking the focus/click spot (important for video):** agent-browser drives via CDP/JS —
-**there is no real cursor for the screencast to capture** → the video doesn't show where the action
-happens. Fix by injecting a DOM overlay (a glowing ring) that, being **rendered, gets recorded**.
-Use `assets/pointer.js` (`point(sel)`): call `eval point(sel)` **before every action** with the same
-selector you'll act on → `wait ~600ms` (let the ring move + pulse) → then fill/click. It's idempotent
-(recreates the ring if lost on navigate) and positions via `getBoundingClientRect`. **Verify one
-frame before the real recording** (`eval point` → `screenshot`) to guard against quoting bugs.
+Record a flow as video (`record start/stop`, **needs ffmpeg** — restart the daemon after installing)
+or watch it live without ffmpeg (`dashboard start` → `http://localhost:4848`, or `stream enable`).
+Because CDP has no real cursor, inject a rendered pointer ring (`assets/pointer.js`) before each
+action so the screencast shows where it happens. Full recipe + traps → `references/video-and-live.md`.
 
 ---
 

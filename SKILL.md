@@ -93,8 +93,11 @@ Full command reference + commonly-missed syntax → `references/commands.md`
 6. end of flow: write 2 files — qa-report.md (verdict) + user guide / bug report
 ```
 
-Four QA layers: (1) Smoke = happy path completes + errors empty · (2) Functional = assert state ·
-(3) Visual = `diff screenshot --baseline` · (4) Error surfacing = `errors`/`console` after every key step.
+QA layers: (1) Smoke = happy path completes + errors empty · (2) Functional = assert state ·
+(3) Visual = `diff screenshot --baseline` · (4) Error surfacing = `errors`/`console` after every key step ·
+(5) a11y = inject axe-core, return count + top N (`references/a11y-layer.md`) ·
+(6) Perf = save/load timing vs budget (`references/perf-layer.md`). Layers 5–6 are opt-in per scenario
+(`a11y`, `perf_budget` in flow.yaml) and return only short numbers — never a full node/timing dump.
 
 **Store test cases as repeatable files** (regression/repro) → write them as flow YAML:
 `references/flow-spec.md`. **Reduce round-trips / daemon stalls** with `batch` + a pre-flight

@@ -69,6 +69,11 @@ scenarios:
     # --- reliability (Phase 3 — ดู reliability-policy.md) ---
     retry_on: [infra]              # default: [] — retry ได้เฉพาะ infra error, assertion ห้าม retry
     quarantine: false              # default: false — flaky ที่ยังรันแต่ไม่นับ gate
+
+    # --- a11y + perf (Phase 4 — ดู a11y-layer.md / perf-layer.md) ---
+    a11y: false                    # default: false — true = รัน axe-core layer, คืน count+top (token-safe)
+    perf_budget:                   # default: null — ไม่วัด
+      save_ms: 3000                # เพดานเวลา save (ms); วัดเกิน = FAIL
 ```
 
 `fixtures`/`teardown` เก็บเป็น **ref ไปไฟล์** ไม่ฝัง logic ลง flow.yaml (คง brain/hands).

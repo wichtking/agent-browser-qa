@@ -69,8 +69,17 @@ python scripts/coverage-check.py qa/<feature>/coverage.yaml
 - **1** — มี AC block ≥ 1 (not_tested / blocked / fail critical|high / quarantine / ไม่มี scenario)
   → `GATE: FAIL`
 - **2** — manifest พัง: parse ไม่ได้, ไม่มี `acceptance_criteria`, `result`/`severity`/`verifiable`
-  ค่าไม่ถูก enum, result=fail แต่ไม่มี severity, หรือ **PyYAML ไม่ได้ติดตั้ง** →
-  พิมพ์ error ทาง stderr, exit 2 (no silent fallback — ไม่ default เงียบ).
+  ค่าไม่ถูก enum, result=fail แต่ไม่มี severity, **flow_scenario ชี้ id ที่ไม่มีใน flow.yaml**
+  (ดู linkage ด้านล่าง), หรือ **PyYAML ไม่ได้ติดตั้ง** → พิมพ์ error ทาง stderr, exit 2
+  (no silent fallback — ไม่ default เงียบ).
+
+### Linkage check (structural — Q1 ตอบ (c))
+`coverage-check.py` เช็คว่า `flow_scenario` ทุกตัว (ที่ไม่ null) **มีอยู่จริง**ใน `flow.yaml`
+ข้างๆ (`qa/<feature>/flow.yaml`, sibling เดียวกัน) — จับ manifest ที่หลุด sync กับ scenario ที่ถูก
+rename/ลบ. เป็น structural check เท่านั้น (ยัง**ไม่**อ่านผลการรันจาก run-log — `result` ยังเชื่อคนกรอก):
+- flow_scenario ชี้ id ที่ **ไม่มี**ใน flow.yaml → **exit 2** (manifest inconsistent, ต้องแก้).
+- **ไม่มี flow.yaml** ข้างๆ (เช่น template) หรือ flow.yaml ใช้ไม่ได้ → **warn ไป stderr แล้วข้าม**
+  (linkage เป็น additive, ไม่ทำ manifest เดิมพัง). มี flow.yaml เมื่อไหร่ → บังคับเข้มทันที.
 
 > การ downgrade "ไม่มี flow_scenario → not_tested" คือหัวใจ: กันการ mark pass ทั้งที่ยังไม่มี
 > scenario รันจริง (สอดคล้อง test-design.md: ห้าม Pass ถ้าไม่ได้ run).

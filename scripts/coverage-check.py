@@ -14,13 +14,15 @@ Exit codes (contract):
        nothing quarantined  -> GATE: PASS
     1  at least one AC is not_tested / blocked / fail(critical|high) /
        quarantined           -> GATE: FAIL
-    2  coverage.yaml is missing, unparseable, or structurally invalid
+    2  coverage.yaml is missing, unparseable, or structurally invalid; or a
+       flow_scenario points at an id missing from the sibling flow.yaml
        (error surfaced, never a silent default)
 
 No silent fallback: a malformed manifest or a missing dependency exits 2 with a
 clear message instead of degrading quietly. medium/low fails do NOT block the
 gate (ship with a tracked ticket, per docs/TEAM-PROCESS.md) but are flagged WARN.
 """
+import os
 import sys
 
 RESULT_VALUES = {"pass", "fail", "not_tested", "blocked"}
@@ -122,6 +124,37 @@ def classify(ac):
     return "PASS", False
 
 
+def check_linkage(acs, coverage_path):
+    """Verify each non-null flow_scenario exists in the sibling flow.yaml.
+
+    Structural linkage only (does not read run results): catches a manifest that
+    drifted out of sync with renamed/deleted scenarios. A missing or unusable
+    flow.yaml is a warning + skip (linkage stays additive, never breaks an
+    existing manifest); a dangling ref is a hard error (exit 2).
+    """
+    flow_path = os.path.join(os.path.dirname(os.path.abspath(coverage_path)), "flow.yaml")
+    if not os.path.exists(flow_path):
+        print(f"WARNING: no flow.yaml next to {coverage_path}; scenario linkage check skipped",
+              file=sys.stderr)
+        return
+    import yaml  # PyYAML already resolved in load_manifest if we got this far
+    try:
+        with open(flow_path, "r", encoding="utf-8") as fh:
+            flow = yaml.safe_load(fh)
+        scenarios = flow.get("scenarios") if isinstance(flow, dict) else None
+        if not isinstance(scenarios, list):
+            raise ValueError("flow.yaml has no scenarios list")
+        ids = {str(s.get("id")) for s in scenarios if isinstance(s, dict) and s.get("id")}
+    except (yaml.YAMLError, OSError, ValueError) as exc:
+        print(f"WARNING: flow.yaml present but unusable for linkage ({exc}); check skipped",
+              file=sys.stderr)
+        return
+    dangling = [f"{ac['id']} -> {ac['flow_scenario']}"
+                for ac in acs if ac.get("flow_scenario") and str(ac["flow_scenario"]) not in ids]
+    if dangling:
+        die_config("flow_scenario not found in flow.yaml: " + ", ".join(dangling))
+
+
 def print_table(rows):
     headers = ["AC", "Scenario", "Verifiable", "Result", "Severity", "Status"]
     widths = [len(h) for h in headers]
@@ -144,6 +177,7 @@ def main(argv):
         acs = validate(data)
     except ManifestError as exc:
         die_config(str(exc))
+    check_linkage(acs, path)
 
     feature = data.get("feature", "(unnamed)")
     print(f"Feature: {feature}   Manifest: {path}")

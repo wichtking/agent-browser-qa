@@ -47,6 +47,32 @@ qa-report + user-guide อ้าง req เดียวกัน = ปิด loo
 
 ---
 
+## v2 fields (optional, additive — flow เดิมไม่มีก็รันได้)
+
+field ใหม่ทั้งหมด **optional มี default** — flow เก่าที่ไม่มี field เหล่านี้รันได้เหมือนเดิม
+(backward-compatible). ใส่เมื่อ scope เกิน smoke.
+
+```yaml
+# --- ระดับไฟล์: test data (Phase 2 — ดู test-data.md) ---
+fixtures:                          # default: none
+  - id: FX-001
+    setup: seed/qa_so_seed.sql     # ref ไป seed script / SuiteQL / SQL (idempotent)
+    idempotent: true
+teardown:                          # default: none — ต้องมี destructive guard (test-data.md §5)
+  - cleanup/qa_so_cleanup.md
+
+scenarios:
+  - id: SC-001
+    # ... steps เดิม ...
+    verifiable: browser            # browser | code-only (default: browser) — ดู test-design.md ✅/⚠️
+```
+
+`fixtures`/`teardown` เก็บเป็น **ref ไปไฟล์** ไม่ฝัง logic ลง flow.yaml (คง brain/hands).
+`verifiable` ระบุว่า scenario นี้พิสูจน์ผ่าน browser ได้จริง หรือเป็น code-only (Dev ทดสอบ) —
+ค่านี้ไหลเข้า coverage manifest (`coverage-model.md`).
+
+---
+
 ## Design → Spec → Run → Report (pipeline เต็ม)
 
 0. **Requirement** — แต่ละ requirement/ticket → เขียน **Acceptance Criteria** (Given/When/Then).

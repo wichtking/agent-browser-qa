@@ -74,6 +74,10 @@ scenarios:
     a11y: false                    # default: false — true = รัน axe-core layer, คืน count+top (token-safe)
     perf_budget:                   # default: null — ไม่วัด
       save_ms: 3000                # เพดานเวลา save (ms); วัดเกิน = FAIL
+
+    # --- visual (Phase 5 — ดู visual-regression.md) ---
+    mask_regions: []               # default: [] — CSS selectors ของ dynamic content (date/running number)
+    diff_threshold: 0.02           # default: 0.02 (2%) — pixel diff ที่ยอมได้ กัน anti-aliasing
 ```
 
 `fixtures`/`teardown` เก็บเป็น **ref ไปไฟล์** ไม่ฝัง logic ลง flow.yaml (คง brain/hands).

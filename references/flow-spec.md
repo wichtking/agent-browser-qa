@@ -65,11 +65,17 @@ scenarios:
   - id: SC-001
     # ... steps เดิม ...
     verifiable: browser            # browser | code-only (default: browser) — ดู test-design.md ✅/⚠️
+
+    # --- reliability (Phase 3 — ดู reliability-policy.md) ---
+    retry_on: [infra]              # default: [] — retry ได้เฉพาะ infra error, assertion ห้าม retry
+    quarantine: false              # default: false — flaky ที่ยังรันแต่ไม่นับ gate
 ```
 
 `fixtures`/`teardown` เก็บเป็น **ref ไปไฟล์** ไม่ฝัง logic ลง flow.yaml (คง brain/hands).
 `verifiable` ระบุว่า scenario นี้พิสูจน์ผ่าน browser ได้จริง หรือเป็น code-only (Dev ทดสอบ) —
 ค่านี้ไหลเข้า coverage manifest (`coverage-model.md`).
+`retry_on` รับเฉพาะ `infra`; assertion fail **ห้าม retry** (`reliability-policy.md` §2).
+`quarantine: true` → scenario ยังรันแต่ **ไม่ทำ gate เขียว** (`coverage-model.md`).
 
 ---
 

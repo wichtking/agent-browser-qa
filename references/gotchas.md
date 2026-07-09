@@ -70,6 +70,10 @@ click "#b"            # ทำงานทันที → count=1 trusted=true
 แล้วสั่งคำสั่งใดก็ได้ — CLI spawn daemon ใหม่เอง (เจอจริง 2026-07-05: kill process แล้ว
 ทุกคำสั่งยัง 10060 ต่อเนื่องจนลบไฟล์).
 
+> **Retry policy:** 10060 / daemon stall เป็น *infra error* → retry ได้ (max 2 + backoff)
+> **หลัง reset สาเหตุ** เท่านั้น. assertion fail ไม่ใช่ infra → ห้าม retry. ดู
+> [`reliability-policy.md`](reliability-policy.md).
+
 ---
 
 ## 4. Syntax ที่พลาดบ่อย [LOW — แต่เสียเวลา debug]

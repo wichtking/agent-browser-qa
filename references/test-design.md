@@ -84,6 +84,11 @@ prompt ทั่วไปครอบคลุมทุก edge case แต่ *
   **Unicode/ไทย**, emoji, injection (SQL/script)
 - **Uniqueness / Duplicate** — ค่าซ้ำ, running number ชน, concurrent create ค่าเดียวกัน ⚠️
 - **Concurrency / Race** ⚠️ — หลาย user แก้ record เดียวกัน, lock, double-submit (✅ เฉพาะ double-submit)
+  - **เทคนิคอัปเกรด mid-flight race เป็น ✅ (deterministic, ไม่ต้องจับจังหวะมือ):** ใช้ `eval`
+    monkey-patch ฟังก์ชัน fetch-wrapper ของแอป (เช่น `postToSuitelet`) ในหน้าเว็บ — await ตัวจริงเสร็จ
+    แล้ว **inject mutation ตรงรอยต่อระหว่าง backend call** (เช่น แก้ cell ระหว่าง create 2 step)
+    ก่อน return; เก็บ log ใน `window.__raceLog` แล้ว assert ผลที่ record ฝั่ง server.
+    พิสูจน์จริง: PWOC stale-qty race (#39) — repro + verify fix ได้ 100% ใน browser
 - **Volume / Performance** — dataset ใหญ่, pagination boundary, timeout, governance ⚠️
 - **State & Sequence** — operation ผิดลำดับ, ทำซ้ำ (idempotency), interrupt กลางคัน, partial failure+rollback ⚠️
 - **Auth / Permission** — ไม่มีสิทธิ์, session หมด, ข้าม scope

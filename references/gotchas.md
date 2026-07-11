@@ -87,6 +87,10 @@ click "#b"            # ทำงานทันที → count=1 trusted=true
   chain ด้วย `&&`. แต่ ref จะ stale ถ้าหน้า re-render/navigate → snapshot ใหม่.
 - **PowerShell กลืน `@e18`** (`@` = splatting token) → `click @e18` กลาย `click` เปล่า
   ("Missing arguments"). ref ต้อง quote เสมอใน PowerShell: `agent-browser click '@e18'`.
+- **`eval` ทุกครั้งรันใน global scope เดียวกันของหน้า** — top-level `let x` ใน eval แรกทำให้
+  eval ถัดไปที่ประกาศ `let x` ซ้ำพัง `SyntaxError: Identifier 'x' has already been declared`
+  (เจอจริง 2 ครั้งใน session เดียว). ครอบ IIFE เสมอ: `(function(){ ...; return JSON.stringify(out); })()`;
+  ค่าที่ต้องใช้ข้าม eval เก็บใน `window.__x`.
 
 ---
 

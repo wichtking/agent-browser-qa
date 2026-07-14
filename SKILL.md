@@ -53,7 +53,7 @@ Version-matched built-in guide (better than guessing from --help): `agent-browse
 ## 2. Golden rules — read before driving the browser (most important)
 
 These traps make automation **fail silently, with no error** — full detail + evidence in
-`references/gotchas.md`, but keep these three in mind at all times:
+`references/gotchas.md`, but keep these four in mind at all times:
 
 1. **`click` does not auto-scroll** → if the button is below the fold, `click` returns `✓ Done`
    but lands on empty space and does nothing. **Always call `scrollintoview <sel>` before `click`**
@@ -62,6 +62,12 @@ These traps make automation **fail silently, with no error** — full detail + e
    `get text .badge`). After a click, prove the effect happened; a successful command return is not proof.
 3. **Avoid long-poll `wait --text` / `wait <selector>`** on Windows (intermittent `os error 10060`)
    → use `wait --load networkidle` + check state with short commands instead.
+4. **A black headed window has 3 different causes — check `get url` first, don't assume "GPU".**
+   (A) url == `about:blank` → the page never navigated (benign; common after "Daemon version mismatch,
+   restarting" → `os error 10060`) → just `open` again. (B) url is a real page + the window is
+   covered/backgrounded → GPU or occlusion (`CalculateNativeWinOcclusion`) → relaunch with the stability
+   flag set from the `qa-browser.ps1` launcher. CDP `screenshot` stays valid in every case (it captures
+   the renderer, not the on-screen window). Detail + the flag set: #9 in `references/gotchas.md`.
 
 Extra: if native `click` / `find ... click` is still flaky, drive with a **JS click**
 `eval "document.querySelector('SEL').click()"` (always reliable — QA the app's real clickability separately).

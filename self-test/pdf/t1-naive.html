@@ -1,0 +1,12 @@
+<!doctype html><meta charset="utf-8"><title>naive</title>
+<style>
+@page { size: 182mm 250mm; margin: 15mm;
+  @bottom-center { content: "FTR " counter(page) "/" counter(pages); font-size: 14pt; color:#000 }
+}
+.sheet{ break-after: page; }
+</style>
+<body>
+<div class="sheet"><h1>Sheet one</h1><p>naive @page margin-box counter, no paged.js</p></div>
+<div class="sheet"><h1>Sheet two</h1></div>
+<div><h1>Sheet three</h1></div>
+</body>

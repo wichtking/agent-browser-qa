@@ -27,6 +27,25 @@ other sessions. Exit code is non-zero if any check fails.
 Plus efficiency measurements: **batch vs sequential** round-trips/time, and **`snapshot -i` vs full**
 output size (token-discipline proxy).
 
+## PDF pagination test (`pdf/pdf-test.sh`)
+
+```bash
+bash self-test/pdf/pdf-test.sh
+```
+
+Verifies the two causal claims in `references/pdf-reports.md` by rendering 3 controlled docs through
+`agent-browser pdf` and counting pages with pymupdf:
+
+| check | claim | result 2026-07-14 |
+|---|---|---|
+| plain `@page @bottom-center{counter(page)}` renders (no paged.js) | "@page counter dead in printToPDF" | **refuted** on Chrome 150 (footer on all pages) |
+| paged.js **with** the 2 fixes → 3 logical == 3 PDF pages | fixes prevent doubling | pass |
+| paged.js **without** fixes → doubles to 6 pages | double-pagination trap | **reproduced** |
+
+Extra deps: `python` with `pymupdf`, and network (paged.js CDN). `claim1` + `claim2-good` are hard
+drift gates; `claim2-bad` non-reproduction is reported INCONCLUSIVE (not a failure) per the
+asymmetric-burden rule — the trap is asserted, a non-repro doesn't refute it.
+
 ## When to run
 
 - After any **agent-browser or Chrome version bump** — this is the drift detector. A claim that

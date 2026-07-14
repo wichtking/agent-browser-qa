@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><title>good</title>
+<style>
+@page { size: 182mm 250mm; margin: 13mm;
+  @bottom-center { content: "FTR " counter(page) "/" counter(pages); font-size: 14pt; color:#000 }
+}
+@media screen { .pagedjs_page{ margin:10mm auto; box-shadow:0 0 6px #999 } }
+@media print  { .pagedjs_page{ margin:0 !important; box-shadow:none !important } }
+.sheet{ break-after: page; }
+</style>
+<body>
+<div class="sheet"><h1>Sheet one</h1><p>paged.js + fixes (size 182x250, print margin:0)</p></div>
+<div class="sheet"><h1>Sheet two</h1></div>
+<div><h1>Sheet three</h1></div>
+<script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+</body>

@@ -20,14 +20,18 @@
 ## ทำไมต้อง paged.js (และกับดักของมัน)
 
 `agent-browser pdf` รับแค่ path — **ไม่มี option ตั้ง margin / paper / preferCSSPageSize /
-header-footer**. CSS `@page` margin-box counter ของ Chrome เปล่าๆ ก็ไม่ทำงานใน printToPDF.
-→ ใช้ **paged.js** (polyfill CSS Paged Media) ที่ให้ `counter(page)/counter(pages)` ใน margin-box
-และสารบัญเลขหน้าจริงด้วย `target-counter`. โหลด CDN ท้าย body **หลัง** script ที่สร้าง DOM:
+header-footer**. `@page` margin-box counter แบบง่าย (`@bottom-center{content:counter(page)}`)
+**ทำงานแล้วบน Chrome 150** — verified 2026-07-14: footer เลขหน้าโผล่ครบทุกหน้าใน printToPDF
+(เคยพังบน Chrome รุ่นเก่า จึงต้อง re-verify ต่อ version; เดิมเอกสารนี้เขียนว่า "ไม่ทำงาน").
+แต่ **ยังต้องใช้ paged.js อยู่ดี** เพราะ **สารบัญเลขหน้า** ต้องพึ่ง `target-counter(attr(href),page)`
+ที่ printToPDF เปล่า ๆ ไม่ให้ + คุม page-break/หน้าปกได้แน่กว่า. โหลด CDN ท้าย body **หลัง** script ที่สร้าง DOM:
 ```html
 <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
 ```
 
-**กับดัก double-pagination (หน้าคู่ว่าง เลขหน้าเป็น 2 เท่า) — ต้องแก้ 2 จุด:**
+**กับดัก double-pagination (หน้าคู่ว่าง เลขหน้าเป็น 2 เท่า) — ต้องแก้ 2 จุด**
+(verified 2026-07-14: paged.js 3 หน้า → PDF **6** หน้าถ้าไม่แก้ หน้าคู่เหลือแค่ footer; แก้แล้วได้ 3 หน้าตรง.
+repro harness: `self-test/pdf/`)**:**
 1. printToPDF ของ agent-browser ใช้ paper **Letter** (พื้นที่พิมพ์ ~196×259mm) + margin default.
    ถ้า `@page size` ใหญ่กว่านี้จะล้นเป็นหน้าถัดไป → ตั้ง **เล็กกว่า**:
    `@page{ size:182mm 250mm; margin:13mm }`

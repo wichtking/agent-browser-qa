@@ -1,0 +1,15 @@
+<!doctype html><meta charset="utf-8"><title>bad</title>
+<style>
+/* NO fixes: @page bigger than printToPDF Letter printable (~196x259mm) + .pagedjs_page margin kept in print */
+@page { size: 216mm 279mm; margin: 22mm;
+  @bottom-center { content: "FTR " counter(page) "/" counter(pages); font-size: 14pt; color:#000 }
+}
+.pagedjs_page{ margin:12mm auto; box-shadow:0 0 6px #999 }   /* not scoped to screen -> adds height in print */
+.sheet{ break-after: page; }
+</style>
+<body>
+<div class="sheet"><h1>Sheet one</h1><p>paged.js WITHOUT fixes (big @page + pagedjs_page margin)</p></div>
+<div class="sheet"><h1>Sheet two</h1></div>
+<div><h1>Sheet three</h1></div>
+<script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
+</body>

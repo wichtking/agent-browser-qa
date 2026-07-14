@@ -92,22 +92,24 @@ verify fix 100%".
 
 | claim | file | adjudication |
 |---|---|---|
-| `@page` margin-box `counter(page)` doesn't work in Chrome `printToPDF` (justifies paged.js) | pdf-reports L23 | **GENUINE** — asserted mechanism, no repro. Smoke-testable (render+count). |
-| paged.js + printToPDF **double-pagination** (blank even pages, page# ×2) | pdf-reports L30 | **GENUINE** — the core trap; fixes given but no A/B. Smoke-testable. |
+| `@page` margin-box `counter(page)` doesn't work in Chrome `printToPDF` (justifies paged.js) | pdf-reports L23 | **REFUTED on Chrome 150 (2026-07-14)** — `@bottom-center{content:counter(page)}` DID render in `agent-browser pdf` (footer on all 3 test pages). Version-drift: broke on old Chrome, works now. pdf-reports.md updated + paged.js kept (still needed for TOC `target-counter`). |
+| paged.js + printToPDF **double-pagination** (blank even pages, page# ×2) | pdf-reports L30 | **CONFIRMED (2026-07-14)** — no fixes → 3 logical pages became **6** PDF pages, even pages footer-only; fixes → clean 3. Matches the wording exactly. `verified` added + `self-test/pdf/` shipped. |
 | headless has no Thai font → boxes | pdf-reports L54 | duplicate of gotchas #5; widely-known → low real risk |
 | wait-before-assert fixes timing-flaky assert | reliability §2 | restates golden rule #2 (verified); testable but timing-flaky to automate |
 | don't `mark_end` at click's `✓ Done` = bogus number | perf §2 | corollary of golden rule #2 (verified) |
 | delete `~/.agent-browser/<session>.*` fixes stuck 10060 | reliability §1 | restates gotchas #3 ("observed 2026-07-05") — inherits its provenance |
 
-→ **2 genuine new candidates**, both in `pdf-reports.md` (the PDF-pagination mechanism). Neither has a
-repro — the same gap the black-window="GPU" claim had. **This is where a "GPU-2" could still hide.**
+→ Both PDF candidates now **resolved by an A/B** (`self-test/pdf/pdf-test.sh`): one was a stale claim
+(Chrome caught up), one was real (verified + regression-tested). **No open "GPU-2" candidate remains**
+in the audited surface. The lesson recurred: an unverified causal claim was 50/50 — one wrong, one right.
 
-### Recommendation
+### Remaining (optional)
 
-- **Dedicated PDF self-test** (not yet built): render `assets/guide-template.html` via paged.js →
-  `agent-browser pdf` → count pages / detect alternating blank pages → verifies the pdf-reports causal
-  claims mechanically. Heavier than the command smoke test (needs paged.js render + PDF page counting),
-  hence separate.
+- **Layer-recipe drift test** (not built): inject axe-core, assert `axe.run` returns the documented
+  `{violations}` shape + a known rule id fires; run `vitals --json` and assert LCP/CLS/TTFB/INP fields
+  exist. Catches tool-version drift on the a11y/perf recipes.
+- The spec/schema claims (flow YAML) are validated by the flow runner + `examples/saucedemo.yaml` —
+  running that example end-to-end is their regression check.
 - **Layer-recipe drift test** (optional): inject axe-core, assert `axe.run` returns the documented
   `{violations}` shape + a known rule id fires; run `vitals --json` and assert the LCP/CLS/TTFB/INP
   fields exist. Catches tool-version drift on the a11y/perf recipes.

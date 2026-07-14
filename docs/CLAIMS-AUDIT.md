@@ -67,6 +67,49 @@ agent-browser / Chrome bump; it is the automatic drift detector.
 **C. Claims the harness can't cover (#1–#5, intermittent/conditional)** — rely on the provenance date
 and re-verify on a tool bump; do not promote to "fact" without an A/B.
 
-**D. Not yet audited (honest gap):** `reliability-policy.md`, `perf-layer.md`, `a11y-layer.md`,
-`visual-regression.md`, `flow-spec.md`, `pdf-reports.md`, `test-design.md` — lower causal-claim
-density (procedural), but should be covered in a next pass.
+**D. Round-2 audited (2026-07-14):** `reliability-policy.md`, `perf-layer.md`, `a11y-layer.md`,
+`visual-regression.md`, `flow-spec.md`, `pdf-reports.md`, `test-design.md` — see below.
+
+---
+
+## Round 2 — reference / layer files (2026-07-14)
+
+~65 falsifiable claims across 7 files (3 parallel audits, verbatim claim + provenance extraction).
+
+**Headline: these files carry almost NO inline provenance markers** — unlike `gotchas.md` /
+`netsuite-qa-browser` which are well-marked "verified <date>". Only markers found: axe-core `4.10.0`,
+printToPDF paper `Letter (~196×259mm)`, and `test-design.md`'s race recipe cites "PWOC #39 — repro +
+verify fix 100%".
+
+**But low overall alarm**, because the claim MIX here differs from gotchas:
+- **Spec/schema** (flow YAML fields, defaults, `retry_on` enum) — definitional, self-consistent → low risk.
+- **Tool-pinned recipes** (axe rule ids, `axe.run` shape, `vitals` fields, paged.js counters) — drift
+  class; correctness = "does the tool still behave this way" → caught by **re-running**, not by reading.
+  These silently break on an axe/agent-browser/Chrome bump. A dedicated layer smoke test would help.
+- **Genuine unverified causal claims** — the "GPU class" — consolidated below.
+
+### Consolidated HIGH-risk (unverified causal stated as fact)
+
+| claim | file | adjudication |
+|---|---|---|
+| `@page` margin-box `counter(page)` doesn't work in Chrome `printToPDF` (justifies paged.js) | pdf-reports L23 | **GENUINE** — asserted mechanism, no repro. Smoke-testable (render+count). |
+| paged.js + printToPDF **double-pagination** (blank even pages, page# ×2) | pdf-reports L30 | **GENUINE** — the core trap; fixes given but no A/B. Smoke-testable. |
+| headless has no Thai font → boxes | pdf-reports L54 | duplicate of gotchas #5; widely-known → low real risk |
+| wait-before-assert fixes timing-flaky assert | reliability §2 | restates golden rule #2 (verified); testable but timing-flaky to automate |
+| don't `mark_end` at click's `✓ Done` = bogus number | perf §2 | corollary of golden rule #2 (verified) |
+| delete `~/.agent-browser/<session>.*` fixes stuck 10060 | reliability §1 | restates gotchas #3 ("observed 2026-07-05") — inherits its provenance |
+
+→ **2 genuine new candidates**, both in `pdf-reports.md` (the PDF-pagination mechanism). Neither has a
+repro — the same gap the black-window="GPU" claim had. **This is where a "GPU-2" could still hide.**
+
+### Recommendation
+
+- **Dedicated PDF self-test** (not yet built): render `assets/guide-template.html` via paged.js →
+  `agent-browser pdf` → count pages / detect alternating blank pages → verifies the pdf-reports causal
+  claims mechanically. Heavier than the command smoke test (needs paged.js render + PDF page counting),
+  hence separate.
+- **Layer-recipe drift test** (optional): inject axe-core, assert `axe.run` returns the documented
+  `{violations}` shape + a known rule id fires; run `vitals --json` and assert the LCP/CLS/TTFB/INP
+  fields exist. Catches tool-version drift on the a11y/perf recipes.
+- The spec/schema claims (flow YAML) are validated by the flow runner itself + `examples/saucedemo.yaml`
+  — running that example end-to-end is their regression check.

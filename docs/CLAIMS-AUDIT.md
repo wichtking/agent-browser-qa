@@ -55,8 +55,8 @@ with no A/B** (the class the black-window="GPU" bug belonged to).
 
 **abq** = agent-browser-qa · **ns** = netsuite-qa-browser
 
-Rows #6, #7, #9, #10, #13, #17 are exercised by `self-test/smoke-test.sh` (13 checks, all green on
-2026-07-14; batch was measured ~5× fewer round-trips than sequential).
+Rows #6, #7, #9, #10, #13, #17 are exercised by `self-test/smoke-test.sh` (all green on 2026-07-14 on
+0.27.0; re-verified on 0.32.1 — see Round 4; batch was measured ~5× fewer round-trips than sequential).
 
 ---
 

@@ -20,8 +20,8 @@ other sessions. Exit code is non-zero if any check fails.
 | `get attr <sel> <name>` — selector before name (reversed → "not found") | gotchas #4 |
 | `find <locator> <val> <action> --name` — action before name | commands.md |
 | `eval` shares page global scope — bare `let x` collides; IIFE avoids it | gotchas #4 |
-| `batch --json` → array of `{command, result, error, success}` | commands.md |
-| `click` does NOT auto-scroll — below-fold click returns `✓ Done` but is a no-op; `scrollintoview` fixes it | gotchas #1 |
+| `batch --json` → array; on 0.32.1 `command` is an array and the value sits at `result.<field>` | commands.md |
+| below-fold `click` auto-scrolls + fires on 0.3x (was a silent no-op on ≤0.27); `scrollintoview` still fires | gotchas #1 |
 | `open about:blank` → `get url` reflects it (black window ≠ bug) | gotchas #9 |
 
 Plus efficiency measurements: **batch vs sequential** round-trips/time, and **`snapshot -i` vs full**

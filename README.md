@@ -132,6 +132,8 @@ agent-browser-qa/
 │   └── pointer.js                 place a pointer ring for video/live
 ├── examples/
 │   └── saucedemo.yaml             runnable flow (happy path + adversarial)
+├── qa/
+│   └── _template/coverage.yaml    coverage manifest starter (release gate)
 ├── self-test/                     mechanical claim checks (drift detector)
 │   ├── smoke-test.sh              syntax/recipe/reproducible claims + efficiency gates
 │   └── pdf/pdf-test.sh            PDF pagination A/B

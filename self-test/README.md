@@ -25,7 +25,9 @@ other sessions. Exit code is non-zero if any check fails.
 | `open about:blank` → `get url` reflects it (black window ≠ bug) | gotchas #9 |
 
 Plus efficiency measurements: **batch vs sequential** round-trips/time, and **`snapshot -i` vs full**
-output size (token-discipline proxy).
+output size (token-discipline proxy). And a **PDF-template scoped-read drift gate** (pure file, no
+browser): asserts a scoped Read of the `<script>` block still saves ≥40% vs the whole template, so a
+CSS refactor that weakens the saving documented in `references/pdf-reports.md` fails here.
 
 ## PDF pagination test (`pdf/pdf-test.sh`)
 

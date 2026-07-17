@@ -92,9 +92,9 @@ verify fix 100%".
 
 | claim | file | adjudication |
 |---|---|---|
-| `@page` margin-box `counter(page)` doesn't work in Chrome `printToPDF` (justifies paged.js) | pdf-reports L23 | **REFUTED on Chrome 150 (2026-07-14)** — `@bottom-center{content:counter(page)}` DID render in `agent-browser pdf` (footer on all 3 test pages). Version-drift: broke on old Chrome, works now. pdf-reports.md updated + paged.js kept (still needed for TOC `target-counter`). |
-| paged.js + printToPDF **double-pagination** (blank even pages, page# ×2) | pdf-reports L30 | **CONFIRMED (2026-07-14)** — no fixes → 3 logical pages became **6** PDF pages, even pages footer-only; fixes → clean 3. Matches the wording exactly. `verified` added + `self-test/pdf/` shipped. |
-| headless has no Thai font → boxes | pdf-reports L54 | duplicate of gotchas #5; widely-known → low real risk |
+| `@page` margin-box `counter(page)` doesn't work in Chrome `printToPDF` (justifies paged.js) | pdf-reports L32 | **REFUTED on Chrome 150 (2026-07-14)** — `@bottom-center{content:counter(page)}` DID render in `agent-browser pdf` (footer on all 3 test pages). Version-drift: broke on old Chrome, works now. pdf-reports.md updated + paged.js kept (still needed for TOC `target-counter`). |
+| paged.js + printToPDF **double-pagination** (blank even pages, page# ×2) | pdf-reports L41 | **CONFIRMED (2026-07-14)** — no fixes → 3 logical pages became **6** PDF pages, even pages footer-only; fixes → clean 3. Matches the wording exactly. `verified` added + `self-test/pdf/` shipped. |
+| headless has no Thai font → boxes | pdf-reports L67 | duplicate of gotchas #5; widely-known → low real risk |
 | wait-before-assert fixes timing-flaky assert | reliability §2 | restates golden rule #2 (verified); testable but timing-flaky to automate |
 | don't `mark_end` at click's `✓ Done` = bogus number | perf §2 | corollary of golden rule #2 (verified) |
 | delete `~/.agent-browser/<session>.*` fixes stuck 10060 | reliability §1 | restates gotchas #3 ("observed 2026-07-05") — inherits its provenance |
@@ -115,3 +115,25 @@ in the audited surface. The lesson recurred: an unverified causal claim was 50/5
   fields exist. Catches tool-version drift on the a11y/perf recipes.
 - The spec/schema claims (flow YAML) are validated by the flow runner itself + `examples/saucedemo.yaml`
   — running that example end-to-end is their regression check.
+
+---
+
+## Round 3 — post-refactor claims (2026-07-17)
+
+Five doc PRs merged (NetSuite scope-out + networkidle caveat #2, PDF template scoped-read #4, trim
+black-window rule #4 #8, batch rationale #9, README networkidle #10). Two of them add a claim the
+ledger must carry; one shifted line refs (fixed in the Round-2 table above: L23→L32, L30→L41, L54→L67).
+
+| # | Claim | Location | Type | Provenance | Risk | Smoke |
+|---|-------|----------|------|-----------|------|-------|
+| 19 | `wait --load networkidle` never settles on NetSuite → use `wait --fn "jQuery.active===0"` | SKILL §3/§4 · commands.md · README · pdf boundary | causal | **cross-ref to netsuite-qa-browser; NOT A/B'd in this repo** | MED | no (harness has no NetSuite) |
+| 20 | scoped Read of the template `<script>` block saves ~half the tokens vs the whole file | pdf-reports step 2 | efficiency | **measured 2026-07-17** — tiktoken o200k_base: guide 4,029→1,890 tok (53%), bug-report 54%; byte proxy 49%/52% | LOW | ✅ (drift gate ≥40%) |
+
+**On #19 (the one to watch):** this is a causal claim of the exact class the audit exists to flag —
+stated as fact, no A/B here. It is **inherited** from `netsuite-qa-browser` (where NetSuite lives), not
+proven in this repo. Do not promote it to "verified" in this skill; if a NetSuite target is ever added
+to the harness, A/B it (networkidle vs `jQuery.active===0`) then relabel. Trimming rule #4 (#8) removed
+a *duplicate* of gotchas #9, not a claim — no ledger change beyond the line-ref fix.
+
+`self-test/smoke-test.sh` now gates #20 with a pure-file check (`<script>` block ≥40% smaller than the
+full template) — runs without agent-browser, so it stays green even where the browser harness can't.

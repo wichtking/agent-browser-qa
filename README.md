@@ -1,5 +1,6 @@
 # agent-browser-qa
 
+[![Release](https://img.shields.io/github/v/release/wichtking/agent-browser-qa?logo=github&label=release&color=5A3FD6)](https://github.com/wichtking/agent-browser-qa/releases/latest)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-5A3FD6?logo=anthropic)](https://docs.anthropic.com/claude/docs/skills)
 [![driver](https://img.shields.io/badge/driver-agent--browser%200.27-orange?logo=googlechrome)](https://github.com/vercel-labs/agent-browser)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)

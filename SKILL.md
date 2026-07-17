@@ -11,8 +11,11 @@ description: >-
   screenshots). Works for English or Thai requests, headless or headed, even when
   "agent-browser" isn't named. Do NOT trigger for writing Playwright/Cypress test code,
   setting up CI test pipelines, or pure file/CSV-to-PDF conversion with no browser run.
-  Always read references/gotchas.md before driving the browser — several silent-failure
-  traps (below-fold click, fake ✓Done, os 10060) live there.
+  Also NOT for NetSuite record-form QA or NetSuite user guides — that is skill
+  netsuite-ui-qa-testing; this skill keeps generic web apps and non-record NetSuite pages
+  (dashboards, Suitelets, list pages). Always read references/gotchas.md before driving
+  the browser — several silent-failure traps (below-fold click, fake ✓Done, os 10060)
+  live there.
 ---
 
 # agent-browser QA & Docs
@@ -62,6 +65,8 @@ These traps make automation **fail silently, with no error** — full detail + e
    `get text .badge`). After a click, prove the effect happened; a successful command return is not proof.
 3. **Avoid long-poll `wait --text` / `wait <selector>`** on Windows (intermittent `os error 10060`)
    → use `wait --load networkidle` + check state with short commands instead.
+   (ห้ามใช้ networkidle บน NetSuite — โพลไม่จบ; ใช้ `wait --fn "window.jQuery && jQuery.active === 0"`
+   ดู skill netsuite-qa-browser)
 4. **A black headed window has 3 different causes — check `get url` first, don't assume "GPU".**
    (A) url == `about:blank` → the page never navigated (benign; common after "Daemon version mismatch,
    restarting" → `os error 10060`) → just `open` again. (B) url is a real page + the window is
@@ -95,7 +100,7 @@ verified vs inferred vs version-pinned: `docs/CLAIMS-AUDIT.md`.
 ## 4. Standard workflow (one pass, two outputs)
 
 ```
-1. open <url> → wait --load networkidle
+1. open <url> → wait --load networkidle   (NetSuite: ห้าม networkidle — ใช้ wait --fn jQuery.active===0)
 2. before each action: screenshot (file) as evidence / guide material
 3. action: scrollintoview → click/fill (or JS click) with ref @eN or a semantic locator
 4. assert the result with a short command (golden rule #2)
@@ -129,6 +134,10 @@ Produce ship-ready docs (cover + logo, table of contents + page numbers, FAQ, gl
 run — ready-made templates + a page-number-correct PDF recipe are included. **Read
 `references/pdf-reports.md` before making a PDF** (there are paged.js + Chrome printToPDF traps that
 cause alternating blank pages).
+
+**Pipeline boundary:** this skill owns the GENERIC guide/bug-report PDF pipeline (paged.js +
+`assets/guide-template.html`). NetSuite record-form guides use netsuite-ui-qa-testing's own pipeline
+(agent-browser pdf + PyMuPDF `add-pdf-outline.py` + `toc_tools.py` two-pass + DOCX) — do not mix them.
 
 - `assets/guide-template.html` — document-style user guide (cover, breadcrumb, highlighted
   screenshot, field table, what/why/effect-on-system, FAQ, glossary). Edit only the data array.

@@ -3,6 +3,11 @@
 เป้าหมาย: PDF ที่มี **ปก+โลโก้ · สารบัญ+เลขหน้าตรงจริง · footer เลขหน้า · screenshot ไฮไลต์ ·
 ตารางข้อมูล** จากการรันจริง. มี template พร้อมใช้ใน `assets/` — แก้แค่ data array.
 
+> **ขอบเขต pipeline:** สูตร paged.js + `assets/guide-template.html` ในไฟล์นี้คือ pipeline
+> เอกสาร GENERIC (web app ทั่วไป / หน้า NetSuite ที่ไม่ใช่ record form). คู่มือ NetSuite record form
+> ใช้ pipeline ของ skill netsuite-ui-qa-testing (agent-browser pdf + `add-pdf-outline.py` +
+> `toc_tools.py` two-pass + DOCX) — อย่าเอามาปนกัน.
+
 ## ขั้นตอน (recipe)
 
 ```

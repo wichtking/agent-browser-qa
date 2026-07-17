@@ -62,6 +62,18 @@ echo "  sequential: 5 CLI calls, $(awk "BEGIN{printf \"%.2f\", $t1-$t0}")s | bat
 echo "=== EFFICIENCY: output size snapshot(full) vs snapshot -i (token proxy) ==="
 echo "  snapshot full: $(ab snapshot | wc -c) bytes | snapshot -i: $(ab snapshot -i | wc -c) bytes"
 
+echo "=== EFFICIENCY: PDF template scoped-read drift gate (pure file, no browser) ==="
+# pdf-reports.md tells you to Read only the <script> block when editing data[]. If a refactor
+# shrinks the CSS the saving weakens -> this gate flags it. Assert the scoped read still saves >=40%.
+ROOT="$(dirname "$HERE")"
+for f in guide-template bug-report-template; do
+  file="$ROOT/assets/$f.html"
+  sline=$(grep -nE '^<script>$' "$file" | head -1 | cut -d: -f1)
+  full=$(wc -c < "$file"); block=$(tail -n +"$sline" "$file" | wc -c); saved=$(( (full-block)*100/full ))
+  echo "  $f: full=${full}c block(<script>@L$sline)=${block}c -> scoped read saves ${saved}%"
+  chk "$f scoped-read saves >=40%" "yes" "$([ "$saved" -ge 40 ] && echo yes || echo no)"
+done
+
 echo "=== cleanup ==="
 ab close >/dev/null
 echo ""

@@ -13,7 +13,11 @@
 ```
 1. ก๊อป template:  cp assets/guide-template.html  qa/<feat>/guide/guide.html
    (หรือ bug-report-template.html)
-2. แก้ data array ในแท็ก <script> ให้ตรงเนื้อหา (scenario/step/field หรือ bug)
+2. แก้ data array ในแท็ก <script> ให้ตรงเนื้อหา (scenario/step/field หรือ bug).
+   **token discipline:** Edit บังคับ Read ก่อน → อย่าอ่านทั้งไฟล์ (CSS ครึ่งไฟล์ไม่ต้องแตะ).
+   อ่านเฉพาะบล็อก `<script>` — `Read offset:57` (guide) / `offset:42` (bug-report); anchor คือ
+   บรรทัด `<script>` เผื่อเลขบรรทัดขยับ. วัดจริง (tiktoken): เต็มไฟล์ 4,029 tok → block 1,890 tok
+   = ประหยัด ~2,000 tok/เอกสาร (53%).
 3. วาง screenshot ไว้ใน guide/shots/ (ถ่ายจาก run จริง — ดูหัวข้อ "ถ่ายภาพไฮไลต์")
 4. สร้าง PDF:
      agent-browser open "file:///ABS/PATH/guide.html"

@@ -13,6 +13,8 @@ A Claude Code skill for browser QA and documentation, built on [`agent-browser`]
 
 The reference files under [`references/`](references) are working notes kept in Thai. This README and [`SKILL.md`](SKILL.md) are in English.
 
+**New here?** Read in order: this README → [`SKILL.md`](SKILL.md) (golden rules + workflow) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (diagrams) → [`references/gotchas.md`](references/gotchas.md) (the silent-failure traps). Working *on* the skill? Start with [`CLAUDE.md`](CLAUDE.md) then [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## How it works
 
 Claude reads the code, derives the tests, and judges pass or fail. `agent-browser` (a Rust CLI over CDP) does the driving and captures the evidence. Its output never enters the model's context on its own, so a full pass stays cheap; favor short-output commands to keep it that way.
@@ -112,6 +114,8 @@ For a real multi-step flow, see [`examples/saucedemo.yaml`](examples/saucedemo.y
 agent-browser-qa/
 ├── README.md                      this file
 ├── SKILL.md                       overview, golden rules, workflow
+├── CLAUDE.md                      orientation for an agent/dev working on the repo
+├── CONTRIBUTING.md                the development loop + how to cut a release
 ├── docs/
 │   ├── ARCHITECTURE.md            workflow diagrams (mermaid) for every flow
 │   └── TEAM-PROCESS.md            team playbook: lifecycle, release gate, RACI
@@ -128,12 +132,42 @@ agent-browser-qa/
 │   └── pointer.js                 place a pointer ring for video/live
 ├── examples/
 │   └── saucedemo.yaml             runnable flow (happy path + adversarial)
+├── self-test/                     mechanical claim checks (drift detector)
+│   ├── smoke-test.sh              syntax/recipe/reproducible claims + efficiency gates
+│   └── pdf/pdf-test.sh            PDF pagination A/B
 └── scripts/
-    └── build-skill.py             build the installable .skill bundle
+    ├── build-skill.py             build the installable .skill bundle
+    ├── coverage-check.py          release gate as an exit code
+    └── release-summary.py         roll every coverage.yaml into one sign-off table
 ```
+
+## Scripts
+
+Python tooling (`pip install -r requirements.txt`, PyYAML):
+
+| Script | What it does | Usage |
+|---|---|---|
+| `scripts/build-skill.py` | Bundle the skill into `agent-browser-qa.skill` (a git-ignored build artifact attached to Releases). | `python scripts/build-skill.py` |
+| `scripts/coverage-check.py` | Release gate → exit code: reads a `qa/<feature>/coverage.yaml`, returns 0 pass / 1 fail / 2 malformed. | `python scripts/coverage-check.py qa/<feature>/coverage.yaml` |
+| `scripts/release-summary.py` | Roll every `qa/*/coverage.yaml` into one QA-Lead sign-off table. | `python scripts/release-summary.py [qa_dir]` |
+
+Mechanical checks live in [`self-test/`](self-test) — run `bash self-test/smoke-test.sh` after any agent-browser or Chrome version bump. Details in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## Glossary
+
+| Term | Meaning |
+|---|---|
+| **One pass, two outputs** | A single walk of the happy path yields both a QA verdict and documentation material. |
+| **QA layers (1–6)** | Smoke · Functional · Visual regression · Error surfacing · a11y · Perf — each opt-in per scenario. |
+| **Flow YAML** | A test case stored as a repeatable file (`requirement` + `acceptance` + scenarios). See [`references/flow-spec.md`](references/flow-spec.md). |
+| **Coverage manifest / gate** | `qa/<feature>/coverage.yaml` maps each Acceptance Criterion to the scenario that proves it; `coverage-check.py` turns it into a pass/fail exit code. |
+| **Claims audit** | The ledger in [`docs/CLAIMS-AUDIT.md`](docs/CLAIMS-AUDIT.md) recording which claim is measured / verified / inferred / version-pinned. |
+| **Golden rules** | The four silent-failure guards in `SKILL.md` §2 (scroll before click, don't trust `✓ Done`, avoid long-poll `wait`, black window ≠ GPU). |
 
 ## More docs
 
+- [`CLAUDE.md`](./CLAUDE.md) — orientation for an agent/dev working on the repo (mental model, file map)
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — the development loop, self-test, and how to cut a release
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — architecture and workflow diagrams for every flow
 - [`docs/TEAM-PROCESS.md`](./docs/TEAM-PROCESS.md) — team playbook: lifecycle, release gate, RACI, artifacts
 - [`references/gotchas.md`](./references/gotchas.md) — traps and fixes

@@ -167,4 +167,38 @@ while keeping its keys.
 "completed-page waits resolve immediately when already ready" (touches `wait --load`) and security
 hardening that "rejects unsafe startup arguments" — the latter is **not** re-verified here against the
 black-window launch flags (`--disable-gpu`, `--disable-features=CalculateNativeWinOcclusion`) because
-that launcher lives in another repo. Flag for manual check before relying on those flags on 0.3x.
+that launcher lives in another repo. **Now A/B-verified in Round 5 → not a blocker.**
+
+---
+
+## Round 5 — "reject unsafe startup arguments" vs black-window flags (2026-07-17)
+
+Resolves the Round-4 open item. A/B'd on **agent-browser 0.32.1 / Chrome-for-Testing 150** (Win11).
+**Verdict: the 0.32 hardening does NOT disable the black-window flags — the concern was mis-scoped.**
+
+Mechanism (why the hardening can't touch them):
+1. agent-browser 0.32.1 exposes **no CLI/env for arbitrary Chrome launch args** — verified against
+   `--help` + the full `AGENT_BROWSER_*` env list. Only curated launch flags exist (`--headed`,
+   `--webgpu`, `--hide-scrollbars`, `--allowed-domains`); arbitrary args are injectable only via a
+   `launch.mutate` plugin or MCP `extraArgs`. So there is no supported path that routes the
+   black-window flags *through* agent-browser's own launch in the first place.
+2. The black-window launcher (`qa-browser.ps1`, external repo) launches Chrome itself with the flags +
+   `--remote-debugging-port`, then agent-browser attaches via `connect`. "reject unsafe startup
+   arguments" governs args agent-browser forwards to a Chrome **it** launches — never flags on an
+   externally-launched Chrome it merely connects to.
+
+A/B (reproduced the launcher path directly, no external repo needed):
+- launched Chrome-for-Testing with all five flags + a CDP port → Chrome came up (`/json/version` OK);
+- `agent-browser connect <port>` → `success:true, launched:true`;
+- read `chrome://version` command line **through agent-browser**: all five flags **LIVE**
+  (`--disable-gpu`, `--disable-software-rasterizer`, `--disable-features=CalculateNativeWinOcclusion`,
+  `--disable-backgrounding-occluded-windows`, `--disable-renderer-backgrounding`);
+- drove the connected session (navigate + eval + read-back) — full control.
+
+Provenance: **A/B verified 2026-07-17 on 0.32.1**. Type: causal, now resolved (was the one open
+"manual check" from Round 4). Caveat tested headless-`new` (flag *acceptance/survival* is the claim;
+the headed occlusion *effect* of mechanism C was already non-repro on Chrome 150 per abq #9).
+
+**New gotcha surfaced:** `agent-browser connect <port>` **blocks the foreground terminal on Windows**
+(returns only when backgrounded — got `exit 0` + `success:true` via a background run). Not yet in
+gotchas.md; candidate follow-up.

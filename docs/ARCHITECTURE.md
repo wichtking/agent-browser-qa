@@ -135,4 +135,4 @@ Snippet: [`../assets/highlight.js`](../assets/highlight.js)
 
 ---
 
-The diagrams reflect the real workflow used with agent-browser 0.27.0 on Windows.
+The diagrams reflect the real workflow used with agent-browser 0.32.1 on Windows.

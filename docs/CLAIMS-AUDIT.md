@@ -2,6 +2,10 @@
 
 Audited: 2026-07-14 · by: Claude Code · env: Win11, agent-browser 0.27.0, Chrome 150
 
+> **Round 4 (2026-07-17):** baseline re-verified on **agent-browser 0.32.1**. Two claims drifted —
+> below-fold `click` now auto-scrolls (rows #13, abq #1) and `batch --json` shape changed (row #10).
+> Rows below are the original 0.27.0 audit; the drift is captured in **Round 4** at the bottom.
+
 **Goal:** find claims that might be "written wrong" before they bite — especially **causal claims
 with no A/B** (the class the black-window="GPU" bug belonged to).
 
@@ -39,10 +43,10 @@ with no A/B** (the class the black-window="GPU" bug belonged to).
 | 7 | `find <locator> <val> <action>` — action first, name as flag | commands / #4 | syntax | confirmed | LOW | ✅ |
 | 8 | PowerShell eats `@eN` (splatting) → must quote | abq #4 | syntax | observed | LOW | (pwsh) |
 | 9 | `eval` shares global scope → bare `let x` collides | abq #4 / ns §4 | syntax | "observed 2×" | LOW | ✅ |
-| 10 | `batch --json` → array of `{command,result,error,success}` | commands | recipe | "verified v0.27.0" | LOW | ✅ |
+| 10 | `batch --json` → array of `{command,result,error,success}` | commands | recipe | v0.27 verified; **shape drifted on 0.32.1 → Round 4** | LOW | ⚠️ |
 | 11 | `press Alt+ArrowDown` opens native dropdown + screenshot captures it | commands | recipe | "verified headed+headless CfT150" | LOW | manual |
 | 12 | element-scoped `screenshot <sel>` drops top-layer popup | commands | recipe | stated | LOW | manual |
-| 13 | click does NOT auto-scroll → below-fold = silent no-op; scrollintoview fixes | abq #1 | causal | in-file minimal repro | LOW | ✅ |
+| 13 | click does NOT auto-scroll → below-fold = silent no-op; scrollintoview fixes | abq #1 | causal | in-file minimal repro (≤0.27); **FIXED on 0.32.1 → Round 4** | LOW | ⚠️ |
 | 14 | `✓ Done` ≠ success → assert state | abq #2 | principle | — | LOW | n/a |
 | 15 | JS click (`eval …click()`) fires handler reliably | abq #7 | recipe | confirmed | LOW | ✅ |
 | 16 | headless CfT has no Thai font → boxes | abq #5 | causal | stated | LOW | (render) |
@@ -137,3 +141,30 @@ a *duplicate* of gotchas #9, not a claim — no ledger change beyond the line-re
 
 `self-test/smoke-test.sh` now gates #20 with a pure-file check (`<script>` block ≥40% smaller than the
 full template) — runs without agent-browser, so it stays green even where the browser harness can't.
+
+---
+
+## Round 4 — 0.32.1 upgrade drift (2026-07-17)
+
+Upgraded the local install 0.27.0 → **0.32.1** and re-ran `self-test/smoke-test.sh` (the drift
+detector). 14/15 passed; the one failure plus a follow-up A/B surfaced **two** real behavior changes.
+Both were reproduced deterministically, not inferred.
+
+| # | Claim (as of 0.27) | 0.32.1 result | adjudication |
+|---|---|---|---|
+| 13 | below-fold `click` = silent no-op; must `scrollintoview` first | **FIXED** — `click` auto-scrolls the element into view and fires. A/B: button `top=1629`, `innerH=569`, `inView=false`, `scrollY 0→1089` after click, handler ran. | Behavior changed. Docs version-noted (SKILL rule #1, gotchas #1, README table): 0.3x auto-scrolls; ≤0.27 no-op; `scrollintoview` is now a safe habit. Fixing version not in release notes / not bisected — confirmed present in 0.32.1. |
+| 10 | `batch --json` item = `{command:"get url", result:<value>, error, success}` | **SHAPE CHANGED** — `command` is an **array** `["get","url"]`; `result` is an **object** `{lifecycle, <named value>}` (e.g. `result.url`). Four keys unchanged. | commands.md updated: read the value at `result.<field>`. The smoke-test #10 checks only key presence, so it passed despite the shape change — a harness gap (see below). |
+
+**Not drifted (re-verified on 0.32.1):** `wait --load networkidle` → `✓ Done`; `get attr` order;
+`find` order; `eval` global scope; `about:blank` benign; the pure-file scoped-read gate.
+
+**Harness lesson:** smoke-test #10 asserts key *presence*, not *shape* — it stayed green while
+`command`/`result` restructured. #10 now also asserts `command` is an array; #13 now asserts the
+auto-scroll behavior. A presence check is not a shape check — a version bump can restructure a value
+while keeping its keys.
+
+**Upstream context (0.28–0.32 release notes):** no headline "click auto-scroll" fix; 0.32.0 did land
+"completed-page waits resolve immediately when already ready" (touches `wait --load`) and security
+hardening that "rejects unsafe startup arguments" — the latter is **not** re-verified here against the
+black-window launch flags (`--disable-gpu`, `--disable-features=CalculateNativeWinOcclusion`) because
+that launcher lives in another repo. Flag for manual check before relying on those flags on 0.3x.

@@ -98,7 +98,7 @@ Extra: if native `click` / `find ... click` is still flaky, drive with a **JS cl
 
 Full command reference + commonly-missed syntax → `references/commands.md`
 
-**Verify the command/syntax claims machine-side:** `self-test/smoke-test.sh` (13 checks against a real
+**Verify the command/syntax claims machine-side:** `self-test/smoke-test.sh` (checks against a real
 agent-browser — re-run on any agent-browser/Chrome version bump = drift detector). Which claims are
 verified vs inferred vs version-pinned: `docs/CLAIMS-AUDIT.md`.
 

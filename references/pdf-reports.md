@@ -18,6 +18,9 @@
    อ่านเฉพาะบล็อก `<script>` — `Read offset:57` (guide) / `offset:42` (bug-report); anchor คือ
    บรรทัด `<script>` เผื่อเลขบรรทัดขยับ. วัดจริง (tiktoken): เต็มไฟล์ 4,029 tok → block 1,890 tok
    = ประหยัด ~2,000 tok/เอกสาร (53%).
+   **content ถูก escape อัตโนมัติ:** ทุกค่าใน `data[]`/`bugs[]` ผ่าน `esc()` ก่อนเข้า DOM →
+   วาง payload ที่ทดสอบ (`<script>`, `<img onerror>`) หรือข้อความที่มี `< > &` ลง evidence/actual
+   ได้ตรงๆ จะแสดงเป็น text ไม่ execute/ไม่พังหน้า (เว้น markup/SVG ที่ template สร้างเอง).
 3. วาง screenshot ไว้ใน guide/shots/ (ถ่ายจาก run จริง — ดูหัวข้อ "ถ่ายภาพไฮไลต์")
 4. สร้าง PDF:
      agent-browser open "file:///ABS/PATH/guide.html"

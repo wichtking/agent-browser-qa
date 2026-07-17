@@ -56,7 +56,14 @@ Version-matched built-in guide (better than guessing from --help): `agent-browse
 ## 2. Golden rules — read before driving the browser (most important)
 
 These traps make automation **fail silently, with no error** — full detail + evidence in
-`references/gotchas.md`, but keep these four in mind at all times:
+`references/gotchas.md`, but keep these five in mind at all times:
+
+0. **Set a per-terminal session BEFORE the first command** so parallel terminals don't share one
+   browser (else two runs click over each other + leak zombie daemons). bash:
+   `export AGENT_BROWSER_SESSION="cc-${CLAUDE_CODE_SESSION_ID:0:8}"` at the head of the `&&` chain
+   (harness shells are -NoProfile/non-interactive, so re-set it inline in every bash call, or pass
+   `--session "cc-<sid8>"`). Parallel NetSuite (shared login) also needs a per-terminal `--profile`
+   dir — Windows locks one profile to one Chrome. Detail + cleanup recipe: #10 in `references/gotchas.md`.
 
 1. **`click` does not auto-scroll** → if the button is below the fold, `click` returns `✓ Done`
    but lands on empty space and does nothing. **Always call `scrollintoview <sel>` before `click`**

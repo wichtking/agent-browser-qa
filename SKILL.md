@@ -67,12 +67,10 @@ These traps make automation **fail silently, with no error** — full detail + e
    → use `wait --load networkidle` + check state with short commands instead.
    (ห้ามใช้ networkidle บน NetSuite — โพลไม่จบ; ใช้ `wait --fn "window.jQuery && jQuery.active === 0"`
    ดู skill netsuite-qa-browser)
-4. **A black headed window has 3 different causes — check `get url` first, don't assume "GPU".**
-   (A) url == `about:blank` → the page never navigated (benign; common after "Daemon version mismatch,
-   restarting" → `os error 10060`) → just `open` again. (B) url is a real page + the window is
-   covered/backgrounded → GPU or occlusion (`CalculateNativeWinOcclusion`) → relaunch with the stability
-   flag set from the `qa-browser.ps1` launcher. CDP `screenshot` stays valid in every case (it captures
-   the renderer, not the on-screen window). Detail + the flag set: #9 in `references/gotchas.md`.
+4. **A black headed window = 3 causes, not just "GPU" — check `get url` first.**
+   `about:blank` → page never navigated (benign) → `open` again; a real page but covered/backgrounded
+   → relaunch with the `qa-browser.ps1` stability flags. CDP `screenshot` stays valid either way.
+   Mechanisms + the flag set: #9 in `references/gotchas.md`.
 
 Extra: if native `click` / `find ... click` is still flaky, drive with a **JS click**
 `eval "document.querySelector('SEL').click()"` (always reliable — QA the app's real clickability separately).

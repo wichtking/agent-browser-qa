@@ -113,8 +113,9 @@ QA layers: (1) Smoke = happy path completes + errors empty · (2) Functional = a
 (`a11y`, `perf_budget` in flow.yaml) and return only short numbers — never a full node/timing dump.
 
 **Store test cases as repeatable files** (regression/repro) → write them as flow YAML:
-`references/flow-spec.md`. **Reduce round-trips / daemon stalls** with `batch` + a pre-flight
-health-check → `references/commands.md`.
+`references/flow-spec.md`. **Fewer process spawns + fewer `os 10060` stalls:** `batch` several
+commands into one invocation (`@eN` refs persist across them) instead of one CLI call each; run a
+pre-flight health-check before a long flow → `references/commands.md`.
 
 Suggested artifact layout:
 ```

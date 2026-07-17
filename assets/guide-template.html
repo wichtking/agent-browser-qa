@@ -83,19 +83,22 @@ const GLOSS=[["<คำศัพท์>","<ความหมาย>"]];         
 
 document.title=META.title; document.querySelector('style').textContent=document.querySelector('style').textContent.replace('__DOC_TITLE__',META.title);
 const S="";
+// escape ค่าที่มาจาก data[]/META (run จริง) ก่อนใส่ innerHTML — กัน content ที่มี <>& พังหน้า/execute.
+// ใช้เฉพาะ text จากผู้ใช้; markup/SVG ที่ template สร้างเองไม่ต้องครอบ.
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const logoSVG=`<svg class="logo" viewBox="0 0 24 24" fill="none" stroke="#1f5fbf" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 7.5h13l-1.1 12.2a1.5 1.5 0 0 1-1.5 1.3H8.1a1.5 1.5 0 0 1-1.5-1.3L5.5 7.5z" fill="#eaf1fb"/><path d="M9 7.5V5.6a3 3 0 0 1 6 0v1.9"/><path d="M9 13.2l2.1 2.1L15 11" stroke="#178a4c" stroke-width="1.9"/></svg>`;
-const cover=`<div class="coverpage">${logoSVG}<h1>${META.title}</h1><div class="sub">${META.sub}</div><div class="tagline">${META.tagline}</div><div class="cdivider"></div><div class="metabox">${META.meta.map(m=>`<div><b>${m[0]}:</b> ${m[1]}</div>`).join("")}</div></div>`;
-const crumbH=(c,u)=>`<p class="crumb">${c.map(x=>`<span>${x}</span>`).join('<span class="sep">›</span>')} <span class="url">(${u})</span></p>`;
-const tblH=f=>`<table><thead><tr><th style="width:28%">ฟิลด์ / ปุ่ม</th><th>รายละเอียด</th><th style="width:30%">ค่าที่ระบุ / ตัวอย่าง</th></tr></thead><tbody>${f.map(([k,w,e])=>`<tr><td class="k">${k}</td><td>${w}</td><td class="ex">${e===D?'<span class="dash">—</span>':'<code>'+e+'</code>'}</td></tr>`).join("")}</tbody></table>`;
+const cover=`<div class="coverpage">${logoSVG}<h1>${esc(META.title)}</h1><div class="sub">${esc(META.sub)}</div><div class="tagline">${esc(META.tagline)}</div><div class="cdivider"></div><div class="metabox">${META.meta.map(m=>`<div><b>${esc(m[0])}:</b> ${esc(m[1])}</div>`).join("")}</div></div>`;
+const crumbH=(c,u)=>`<p class="crumb">${c.map(x=>`<span>${esc(x)}</span>`).join('<span class="sep">›</span>')} <span class="url">(${esc(u)})</span></p>`;
+const tblH=f=>`<table><thead><tr><th style="width:28%">ฟิลด์ / ปุ่ม</th><th>รายละเอียด</th><th style="width:30%">ค่าที่ระบุ / ตัวอย่าง</th></tr></thead><tbody>${f.map(([k,w,e])=>`<tr><td class="k">${esc(k)}</td><td>${esc(w)}</td><td class="ex">${e===D?'<span class="dash">—</span>':'<code>'+esc(e)+'</code>'}</td></tr>`).join("")}</tbody></table>`;
 let n=0,toc=`<div class="toc"><h2>สารบัญ</h2><ul>`,body="";
-data.forEach(scn=>{toc+=`<li class="scn"><a href="#${scn.id}">${scn.title}</a></li>`;
-  body+=`<div class="scn-divider ${scn.color}" id="${scn.id}">${scn.title}</div><div class="overview"><p><b>📘 คืออะไร:</b> ${scn.ov.what}</p><p><b>🎯 ทำเพื่ออะไร:</b> ${scn.ov.why}</p><p><b>🕐 เมื่อไรใช้:</b> ${scn.ov.when}</p></div>`;
-  scn.steps.forEach(st=>{n++;const id="sec-"+n;toc+=`<li class="step"><a href="#${id}">${n}. ${st.act}</a></li>`;
-    body+=`<h2 class="sec" id="${id}">${n}. ${st.act}</h2>`+crumbH(st.crumb,st.url)+`<div class="shot"><img src="${S+st.img}" alt="${st.act}"></div><p class="do">▸ <b>วิธีทำ:</b> ${st.do}</p><p class="res">${st.res}</p><div class="why"><b>💬 ทำงานอย่างไร / ทำไม:</b> ${st.why}</div><div class="detail-label">รายละเอียดการระบุข้อมูล</div>`+tblH(st.fields);
-    if(st.note)body+=`<div class="note">${st.note}</div>`; if(st.warn)body+=`<div class="warn">${st.warn}</div>`;});});
-if(SYS&&SYS.length){toc+=`<li class="scn"><a href="#sys">ผลต่อระบบหลังทำรายการ</a></li>`;body+=`<div class="scn-divider sys-h" id="sys">🧩 ผลต่อระบบหลังทำรายการ</div><div class="secblock"><table><thead><tr><th style="width:24%">การกระทำ</th><th>ผลที่สังเกตจริง</th><th>เทียบระบบจริงทั่วไป</th></tr></thead><tbody>${SYS.map(r=>`<tr><td class="k">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("")}</tbody></table><div class="note">${SYS_NOTE}</div></div>`;}
-if(FAQ&&FAQ.length){toc+=`<li class="scn"><a href="#faq">FAQ / ปัญหาที่พบบ่อย</a></li>`;body+=`<div class="scn-divider faq-h" id="faq">❓ FAQ / ปัญหาที่พบบ่อย</div><div class="secblock">${FAQ.map(([q,a])=>`<div class="qa"><p class="q">${q}</p><p class="a">${a}</p></div>`).join("")}</div>`;}
-if(GLOSS&&GLOSS.length){toc+=`<li class="scn"><a href="#gloss">อภิธานศัพท์ (Glossary)</a></li>`;body+=`<div class="scn-divider gloss-h" id="gloss">📖 อภิธานศัพท์ (Glossary)</div><div class="secblock"><dl class="gloss">${GLOSS.map(([t,d])=>`<div><dt>${t}</dt><dd>${d}</dd></div>`).join("")}</dl></div>`;}
+data.forEach(scn=>{toc+=`<li class="scn"><a href="#${scn.id}">${esc(scn.title)}</a></li>`;
+  body+=`<div class="scn-divider ${scn.color}" id="${scn.id}">${esc(scn.title)}</div><div class="overview"><p><b>📘 คืออะไร:</b> ${esc(scn.ov.what)}</p><p><b>🎯 ทำเพื่ออะไร:</b> ${esc(scn.ov.why)}</p><p><b>🕐 เมื่อไรใช้:</b> ${esc(scn.ov.when)}</p></div>`;
+  scn.steps.forEach(st=>{n++;const id="sec-"+n;toc+=`<li class="step"><a href="#${id}">${n}. ${esc(st.act)}</a></li>`;
+    body+=`<h2 class="sec" id="${id}">${n}. ${esc(st.act)}</h2>`+crumbH(st.crumb,st.url)+`<div class="shot"><img src="${esc(S+st.img)}" alt="${esc(st.act)}"></div><p class="do">▸ <b>วิธีทำ:</b> ${esc(st.do)}</p><p class="res">${esc(st.res)}</p><div class="why"><b>💬 ทำงานอย่างไร / ทำไม:</b> ${esc(st.why)}</div><div class="detail-label">รายละเอียดการระบุข้อมูล</div>`+tblH(st.fields);
+    if(st.note)body+=`<div class="note">${esc(st.note)}</div>`; if(st.warn)body+=`<div class="warn">${esc(st.warn)}</div>`;});});
+if(SYS&&SYS.length){toc+=`<li class="scn"><a href="#sys">ผลต่อระบบหลังทำรายการ</a></li>`;body+=`<div class="scn-divider sys-h" id="sys">🧩 ผลต่อระบบหลังทำรายการ</div><div class="secblock"><table><thead><tr><th style="width:24%">การกระทำ</th><th>ผลที่สังเกตจริง</th><th>เทียบระบบจริงทั่วไป</th></tr></thead><tbody>${SYS.map(r=>`<tr><td class="k">${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")}</tbody></table><div class="note">${esc(SYS_NOTE)}</div></div>`;}
+if(FAQ&&FAQ.length){toc+=`<li class="scn"><a href="#faq">FAQ / ปัญหาที่พบบ่อย</a></li>`;body+=`<div class="scn-divider faq-h" id="faq">❓ FAQ / ปัญหาที่พบบ่อย</div><div class="secblock">${FAQ.map(([q,a])=>`<div class="qa"><p class="q">${esc(q)}</p><p class="a">${esc(a)}</p></div>`).join("")}</div>`;}
+if(GLOSS&&GLOSS.length){toc+=`<li class="scn"><a href="#gloss">อภิธานศัพท์ (Glossary)</a></li>`;body+=`<div class="scn-divider gloss-h" id="gloss">📖 อภิธานศัพท์ (Glossary)</div><div class="secblock"><dl class="gloss">${GLOSS.map(([t,d])=>`<div><dt>${esc(t)}</dt><dd>${esc(d)}</dd></div>`).join("")}</dl></div>`;}
 toc+=`</ul></div>`;
 document.getElementById("doc").innerHTML=cover+toc+body;
 </script>

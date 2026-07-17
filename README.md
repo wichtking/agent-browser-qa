@@ -61,7 +61,7 @@ Golden rule: `click` does not auto-scroll, so call `scrollintoview` first; and d
 |---|---|---|
 | `click` doesn't auto-scroll | button below fold → CLI `✓ Done` but nothing happens | `scrollintoview <sel>` before `click` |
 | Don't trust `✓ Done` | command succeeds but has no effect | assert state after every action (`wait` / `get url` / `get text`) |
-| `os error 10060` | `wait --text` / `wait <selector>` flakes on Windows | use `wait --load networkidle` + short state checks |
+| `os error 10060` | `wait --text` / `wait <selector>` flakes on Windows | use `wait --load networkidle` + short state checks (NetSuite: `wait --fn "jQuery.active===0"` — networkidle never settles there) |
 | headless has no Thai font | injected Thai labels render as boxes | put Thai text in the HTML, bake only the ring into the image |
 | `pdf` double-pagination | paged.js PDF gets alternating blank pages | fit `@page size` + `.pagedjs_page` margin on screen only |
 

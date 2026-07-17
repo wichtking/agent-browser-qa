@@ -5,7 +5,7 @@
 #
 #   bash self-test/smoke-test.sh
 #
-# Verified: agent-browser 0.27.0 / Chrome for Testing 150 / Windows 11 (2026-07-14).
+# Verified: agent-browser 0.32.1 / Chrome for Testing / Windows 11 (2026-07-17); earlier: 0.27.0 (2026-07-14).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HERE_WIN="$(cygpath -m "$HERE" 2>/dev/null || pwd -W 2>/dev/null || echo "$HERE")"
@@ -37,18 +37,19 @@ chk     "IIFE form avoids collision"        "ok3"                   "$(ab eval "
 echo "=== #10 batch --json shape ==="
 BJ="$(ab batch 'get url' 'get title' --json)"
 chk     "batch starts as array"       '[{'        "$(tr -d ' \n' <<<"$BJ" | head -c 3)"
+chk     "0.3x: command is an array"   '"command":[' "$(tr -d ' \n' <<<"$BJ")"
 chk     "batch item has command key"  '"command"' "$BJ"
 chk     "batch item has result key"   '"result"'  "$BJ"
 chk     "batch item has error key"    '"error"'   "$BJ"
 chk     "batch item has success key"  '"success"' "$BJ"
 
-echo "=== #13 click does NOT auto-scroll (below-fold = silent no-op) then scrollintoview fixes ==="
+echo "=== #13 below-fold click: auto-scrolls + fires on 0.3x (was a silent no-op on <=0.27) ==="
 ab open "$PAGE" >/dev/null
-raw_click="$(ab click '#btm')"; after_noscroll="$(ab get text '#bout')"
+raw_click="$(ab click '#btm')"; after_click="$(ab get text '#bout')"
 echo "  (raw below-fold click returned: $(head -c 40 <<<"$raw_click"))"
-chk     "below-fold click left state unchanged" "bidle" "$after_noscroll"
-ab scrollintoview '#btm' >/dev/null; ab click '#btm' >/dev/null
-chk     "scrollintoview + click fired handler"  "btm-clicked" "$(ab get text '#bout')"
+chk     "0.3x: below-fold click auto-scrolls + fires handler" "btm-clicked" "$after_click"
+ab open "$PAGE" >/dev/null; ab scrollintoview '#btm' >/dev/null; ab click '#btm' >/dev/null
+chk     "scrollintoview + click still fires (safe habit)" "btm-clicked" "$(ab get text '#bout')"
 
 echo "=== #17 about:blank benign + get url reflects it ==="
 chk     "open about:blank -> get url == about:blank" "about:blank" "$(ab open about:blank >/dev/null; ab get url)"

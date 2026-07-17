@@ -1,4 +1,4 @@
-# agent-browser — Command Reference (v0.27.0)
+# agent-browser — Command Reference (v0.32.1)
 
 คู่มือในตัวที่ version-matched: `agent-browser skills get core --full`. ด้านล่างคือคำสั่งที่ใช้บ่อย
 สำหรับ QA + docs. global flags: `--json` (machine output), `--session <name>` (isolated),
@@ -81,8 +81,10 @@ wait <ms>                       # เฉพาะ clientside toggle สั้น
 agent-browser batch "open <url>" "wait --load networkidle" "get url" "errors" --json
 # หรือ pipe JSON: echo '["get url","get title"]' | agent-browser batch --json
 ```
-- **`--json` ของ batch คืน array** `[{command, result, error, success}, ...]` — `result` อยู่ตรงๆ
-  (ไม่ห่อ `data{}` แบบ single-command). verify แล้วบน v0.27.0. ใช้เป็น `run-log.json` ได้เลย.
+- **`--json` ของ batch คืน array** `[{command, result, error, success}, ...]`. **shape เปลี่ยนจาก
+  v0.27 → v0.32.1** (verify 2026-07-17): `command` เป็น **array** (`["get","url"]` ไม่ใช่ string `"get url"`)
+  และ `result` เป็น **object ห่อ** `{lifecycle, <ค่าที่ชื่อตาม command เช่น url>}` (v0.27 คืนค่าตรง ๆ).
+  key ยังครบ 4 (command/result/error/success). ดึงค่าจริงที่ `result.<field>` (เช่น `.result.url`). ใช้เป็น `run-log.json` ได้เลย.
 - ref `@eN` persist ข้ามคำสั่งใน batch (daemon เก็บ browser). ถ้าไม่ batch: chain ด้วย `&&` ในเชลล์ก็ได้.
 - **อย่าใส่ assertion ที่ output ยาว** (snapshot เต็ม/get html) ลง batch — ผลรวมกลับ context ทั้งก้อน.
   batch เก็บเฉพาะคำสั่งสั้น (navigate/fill/click/get/errors) ตาม token discipline.

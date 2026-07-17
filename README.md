@@ -2,7 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/wichtking/agent-browser-qa?logo=github&label=release&color=5A3FD6)](https://github.com/wichtking/agent-browser-qa/releases/latest)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-5A3FD6?logo=anthropic)](https://docs.anthropic.com/claude/docs/skills)
-[![driver](https://img.shields.io/badge/driver-agent--browser%200.27-orange?logo=googlechrome)](https://github.com/vercel-labs/agent-browser)
+[![driver](https://img.shields.io/badge/driver-agent--browser%200.32-orange?logo=googlechrome)](https://github.com/vercel-labs/agent-browser)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 <p align="center">
@@ -62,7 +62,7 @@ Golden rule: `click` does not auto-scroll, so call `scrollintoview` first; and d
 
 | Trap | Symptom | Fix |
 |---|---|---|
-| `click` doesn't auto-scroll | button below fold → CLI `✓ Done` but nothing happens | `scrollintoview <sel>` before `click` |
+| `click` below the fold (≤0.27) | `✓ Done` but no-op — **fixed on 0.3x, which auto-scrolls** | `scrollintoview <sel>` before `click` — now a safe habit, still needed on old/mixed versions |
 | Don't trust `✓ Done` | command succeeds but has no effect | assert state after every action (`wait` / `get url` / `get text`) |
 | `os error 10060` | `wait --text` / `wait <selector>` flakes on Windows | use `wait --load networkidle` + short state checks (NetSuite: `wait --fn "jQuery.active===0"` — networkidle never settles there) |
 | headless has no Thai font | injected Thai labels render as boxes | put Thai text in the HTML, bake only the ring into the image |
@@ -85,7 +85,7 @@ npm install -g agent-browser   # or brew / cargo install agent-browser
 agent-browser install          # download Chrome for Testing (first time)
 ```
 
-Requirements: Node.js for `npm install -g`; `ffmpeg` only if you use `record` for video; Python 3.10+ and `git` only if you build the `.skill` bundle. Verified with `agent-browser` 0.27.x. For other versions, run `agent-browser skills get core --full` for version-matched syntax.
+Requirements: Node.js for `npm install -g`; `ffmpeg` only if you use `record` for video; Python 3.10+ and `git` only if you build the `.skill` bundle. Verified with `agent-browser` 0.32.1 (older notes tagged 0.27.x; see `docs/CLAIMS-AUDIT.md` for per-version drift). For other versions, run `agent-browser skills get core --full` for version-matched syntax.
 
 Maintainers: the `.skill` bundle is a build artifact and is not committed. Rebuild it with `python scripts/build-skill.py` and attach the output to a GitHub Release.
 

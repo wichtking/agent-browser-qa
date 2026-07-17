@@ -65,9 +65,11 @@ These traps make automation **fail silently, with no error** — full detail + e
    `--session "cc-<sid8>"`). Parallel NetSuite (shared login) also needs a per-terminal `--profile`
    dir — Windows locks one profile to one Chrome. Detail + cleanup recipe: #10 in `references/gotchas.md`.
 
-1. **`click` does not auto-scroll** → if the button is below the fold, `click` returns `✓ Done`
-   but lands on empty space and does nothing. **Always call `scrollintoview <sel>` before `click`**
-   for buttons at the bottom of a form / below the fold.
+1. **`click` auto-scrolls on 0.3x — but still assert.** On agent-browser **≤0.27** a below-fold
+   `click` returned `✓ Done` and did nothing (silent no-op); **0.32.1 auto-scrolls the element into
+   view and fires the handler** (verified 2026-07-17: below-fold button, `scrollY` 0→1089). So
+   `scrollintoview <sel>` before `click` is now a *safe habit*, not a hard requirement — keep it for
+   below-fold buttons on old/mixed versions. Either way, prove the effect with rule #2.
 2. **Don't trust `✓ Done`** — always assert the resulting state (`wait` element / `get url` /
    `get text .badge`). After a click, prove the effect happened; a successful command return is not proof.
 3. **Avoid long-poll `wait --text` / `wait <selector>`** on Windows (intermittent `os error 10060`)
